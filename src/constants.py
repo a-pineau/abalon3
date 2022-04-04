@@ -75,9 +75,11 @@ MARBLE_FREE = pygame.image.load(
     os.path.join(IMAGES_DIR, "sphere_empty.png")
     ).convert_alpha()
 
+MARBLE_RED.get_rect().inflate_ip(2, 2)
+print(MARBLE_RED.get_rect())
 MARBLE_SIZE = MARBLE_RED.get_rect().size[0] # All marbles have the same size
+print(MARBLE_SIZE)
 MAX_DISTANCE_MARBLE = MARBLE_SIZE * sqrt(1.25) # Max distance between two neighbouring marbles (diagonal)
-print(MAX_DISTANCE_MARBLE)
 
 # https://icons8.com/icon/54885/skull
 SKULL = pygame.image.load(
@@ -92,6 +94,7 @@ MARBLE_IMGS = {
     2: MARBLE_BLUE, 
     3: MARBLE_YELLOW,
     4: MARBLE_GREEN,
+    5: MARBLE_RED,
 }
 MARBLE_DEBUG = {
     MARBLE_FREE: "Free", 

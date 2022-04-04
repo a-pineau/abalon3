@@ -1,6 +1,7 @@
 import math
 import random
 import pygame
+
 from pygame import gfxdraw
 from pygame.locals import *
 from constants import *
@@ -9,7 +10,7 @@ from copy import deepcopy
 pygame.init()
 
 
-class Abalone(pygame.sprite.Sprite):
+class Board(pygame.sprite.Sprite):
     """
     A class used to represent a standard Abalone board.
     Both players have 14 marbles.
@@ -89,7 +90,7 @@ class Abalone(pygame.sprite.Sprite):
     
     # Constructor
     # -----------
-    def __init__(self, board=STANDARD):
+    def __init__(self, data=STANDARD):
         """Constructor.
 
         Calls the parent constructor and initializes all the attributes.
@@ -105,57 +106,11 @@ class Abalone(pygame.sprite.Sprite):
         """
         
         super().__init__()
-        self.board = board
+        self.data = data
 
-    # -------
-    # def build_marbles(self) -> None:
-    #     """Places the marbles to their initial position."""
-    #     y_init = 30
-    #     gap_y = MARBLE_SIZE
-    #     for row in self.configuration:
-    #         x_init = SIZE_X - 400 - len(row) * MARBLE_SIZE
-    #         gap_x = MARBLE_SIZE
-    #         for element in row:
-    #             x = x_init + gap_x
-    #             y = y_init + gap_y
-    #             self.marbles_pos[(x, y)] = MARBLE_IMGS[element]
-    #             self.marbles_rect.append(
-    #                 MARBLE_IMGS[element].get_rect(topleft = (x, y)))
-    #             gap_x += 2 * MARBLE_SIZE
-    #         gap_y += 2 * MARBLE_SIZE
-
-    def display_marbles(self, screen) -> None:
-        """Display the marbles, i.e. the board and both (blue and yellow) dead-zones.
-
-        Parameter
-        ---------
-        screen: pygame.Surface (required)
-        """
-
-        screen.fill(BACKGROUND)
-        skull_rect = SKULL.get_rect()
-
-        for m_pos, m_color in self.marbles_pos.items():
-            screen.blit(m_color, m_pos)
-        for k_dz, v_dz in self.buffer_dead_zone.items():
-            screen.blit(v_dz, k_dz)
-            skull_rect.center = (k_dz[0] + SHIFT_X, k_dz[1] + SHIFT_Y)
-            screen.blit(SKULL, skull_rect)
-        for k_blue, v_blue in self.dead_zone_blue.items():
-            screen.blit(v_blue, k_blue)
-            if v_blue != MARBLE_FREE:
-                skull_rect.center = (k_blue[0] + SHIFT_X, k_blue[1] + SHIFT_Y)
-                screen.blit(SKULL, skull_rect)
-        for k_yellow, v_yellow in self.dead_zone_yellow.items():
-            screen.blit(v_yellow, k_yellow)
-            if v_yellow != MARBLE_FREE:
-                skull_rect.center = (k_yellow[0] + SHIFT_X, k_yellow[1] + SHIFT_Y)
-                screen.blit(SKULL, skull_rect)
-
-   
 
 def main():
-    game = Abalone()
+    board = Board()
 
 if __name__ == "__main__":
     main()
