@@ -27,6 +27,7 @@ def main():
     game = Game(board)
     running = True
     moving = False
+    change_color = False
     valid_move = False
     
     while running:
@@ -59,6 +60,7 @@ def main():
             # Updating board
             elif event.type == MOUSEBUTTONUP:
                 moving = False
+                change_color = False
                 if valid_move:
                     board.data[new_norm_x][new_norm_y] = 2
                 else:
@@ -70,7 +72,10 @@ def main():
                 board.data[norm_x][norm_y] = 1
                 new_norm_x, new_norm_y = game.normalize_coordinates(event.pos)
                 if (new_norm_x, new_norm_y) != (norm_x, norm_y):
-                    valid_move = game.check_move_validity(p1, new_norm_x, new_norm_y)
+                    change_color = True
+                    target_marble_buffer = game.rect_marbles[(new_norm_x, new_norm_y)]
+                    p2 = game.rect_marbles[(new_norm_x, new_norm_y)].center
+                    valid_move, new_color = game.check_move_validity(p1, p2)
                 
             # Selecting multiple marbles
             elif p_keys[K_LSHIFT]:
@@ -84,6 +89,8 @@ def main():
                             game.compute_new_marbles_range(rect)
 
         game.display_marbles(screen)
+        if change_color:
+                screen.blit(MARBLE_IMGS[new_color], target_marble_buffer)
         if moving: 
             screen.blit(buffer_marble, buffer_rect)
         pygame.display.update()

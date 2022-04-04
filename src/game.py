@@ -102,8 +102,14 @@ class Game(pygame.sprite.Sprite):
         c = (x - (FIRST_TOP_LEFT_X - 0.5 * (len(self.board_data[r]) - 5) * MARBLE_SIZE)) // MARBLE_SIZE
         return r, int(c)
     
-    def check_move_validity(self, p1, new_norm_x, new_norm_y) -> None:
-        p2 = self.rect_marbles[(new_norm_x, new_norm_y)].center
+    def check_move_validity(self, p1, p2) -> bool:
+        """TODO.
+
+        Parameter
+        ---------
+        screen: pygame.Surface (required)
+            Game window
+        """
         distance = self.compute_distance_marbles(p1, p2)
         
         if distance <= MAX_DISTANCE_MARBLE:
@@ -112,11 +118,7 @@ class Game(pygame.sprite.Sprite):
         else:
             new_color = 5
             valid_move = False
-        old_color = self.board_data[new_norm_x][new_norm_y]
-        print(old_color)
-        self.recolor_marbles(new_norm_x, new_norm_y, old_color, new_color)
-        self.buffer_marbles_color.append((new_norm_x, new_norm_y))
-        return valid_move
+        return valid_move, new_color
     
     def recolor_marbles(self, new_norm_x, new_norm_y, old_color, new_color):
         """TODO.
@@ -127,9 +129,11 @@ class Game(pygame.sprite.Sprite):
             Game window
         """
         if self.buffer_marbles_color:
-            print("OLD:", old_color, "NEW:", new_color)
             recolor_x, recolor_y = self.buffer_marbles_color.pop()
-            self.board_data[recolor_x][recolor_y] = old_color
+            if self.board_data[new_norm_x][new_norm_y] in (2, 3):
+                self.board_data[recolor_x][recolor_y] = 3
+            else:
+                self.board_data[recolor_x][recolor_y] = 1
             self.board_data[new_norm_x][new_norm_y] = new_color
             
     @staticmethod
