@@ -23,8 +23,7 @@ def main():
     pygame.init()
     screen = pygame.display.set_mode([SIZE_X, SIZE_Y])
     pygame.display.set_caption("aBOT_Lone")
-    board = Board()
-    game = Game(board)
+    game = Game()
     running = True
     moving = False
     change_color = False
@@ -44,39 +43,35 @@ def main():
                     running = False
             # Selecting a single marble
             elif event.type == MOUSEBUTTONDOWN and not p_keys[K_LSHIFT]:
-                norm_x, norm_y = game.normalize_coordinates(event.pos)
-                if norm_x >= 0 and norm_y >= 0:
+                first_x, first_y = game.normalize_coordinates(event.pos)
+                if first_x >= 0 and first_y >= 0:
                     try:
-                        buffer_value = board.data[norm_x][norm_y]
+                        first_value = game.data[first_x][first_y]
                     except IndexError:
                         print("Out of bounds!")
                         continue
                     else:
-                        if buffer_value > 1: # Cannot move free marbles
+                        if first_value > 1: # Cannot move free marbles
                             moving = True
-                            buffer_marble = MARBLE_IMGS[buffer_value]
-                            buffer_rect = game.rect_marbles[(norm_x, norm_y)]
-                            p1 = buffer_rect.center # Center of the selected marble
+                            buffer_value = MARBLE_IMGS[first_value]
+                            first_marble = game.rect_marbles[(first_x, first_y)]
+                            buffer_marble_center = first_marble.center # To keep track of the initial position
+                            print("NTM")
             # Updating board
             elif event.type == MOUSEBUTTONUP:
                 moving = False
                 change_color = False
-                if valid_move:
-                    board.data[new_norm_x][new_norm_y] = 2
-                else:
-                    board.data[norm_x][norm_y] = 2
-                    board.data[new_norm_x][new_norm_y] = 1
+                game.update_game(valid_move)
             # Moving single marble
             elif event.type == MOUSEMOTION and moving:
-                buffer_rect.move_ip(event.rel)
-                board.data[norm_x][norm_y] = 1
-                new_norm_x, new_norm_y = game.normalize_coordinates(event.pos)
-                if (new_norm_x, new_norm_y) != (norm_x, norm_y):
+                first_marble.move_ip(event.rel)
+                game.data[first_x][first_y] = 1
+                target_x, target_y = game.normalize_coordinates(event.pos)
+                if (target_x, target_y) != (first_x, first_y):
                     change_color = True
-                    target_marble_buffer = game.rect_marbles[(new_norm_x, new_norm_y)]
-                    p2 = game.rect_marbles[(new_norm_x, new_norm_y)].center
-                    valid_move, new_color = game.check_move_validity(p1, p2)
-                
+                    valid_move, new_color = game.move_single_marble(
+                        buffer_marble_center, target_x, target_y
+                    )
             # Selecting multiple marbles
             elif p_keys[K_LSHIFT]:
                 if not game.buffer_marbles_pos:
@@ -90,9 +85,10 @@ def main():
 
         game.display_marbles(screen)
         if change_color:
-                screen.blit(MARBLE_IMGS[new_color], target_marble_buffer)
+            target_marble = game.rect_marbles[(target_x, target_y)]
+            screen.blit(MARBLE_IMGS[new_color], target_marble)
         if moving: 
-            screen.blit(buffer_marble, buffer_rect)
+            screen.blit(buffer_value, first_marble)
         pygame.display.update()
     pygame.quit()
     

@@ -31,7 +31,7 @@ class Game(pygame.sprite.Sprite):
     
     # Constructor
     # -----------
-    def __init__(self, board):
+    def __init__(self, configuration=STANDARD):
         """Constructor.
 
         Calls the parent constructor and initializes all the attributes.
@@ -47,10 +47,11 @@ class Game(pygame.sprite.Sprite):
         """
         
         super().__init__()
-        self.board_data = board.data
+        self.data = configuration
         self.rect_marbles = {}
         self.rect_coordinates = []
-        self.buffer_marbles_color = []
+        self.marbles_2_change = {}
+        self.current_color = 2 # Change to random choice
         self.compute_rect_coordinates()
         
     def compute_rect_coordinates(self):   
@@ -61,12 +62,12 @@ class Game(pygame.sprite.Sprite):
         screen: pygame.Surface (required)
             Game window
         """
-        for i_row, row in enumerate(self.board_data):
+        for i_row, row in enumerate(self.data):
             # Number of marbles in the current row
             for i_col in range(len(row)):
                 # The value 5 corresponds to the number of marbles in the first row
                 # The board's position is defined w/ respect to the top-left marble (first marble of top-row)
-                x = FIRST_TOP_LEFT_X - MARBLE_SIZE * (0.5 * (len(self.board_data[i_row]) - 5) - i_col)
+                x = FIRST_TOP_LEFT_X - MARBLE_SIZE * (0.5 * (len(self.data[i_row]) - 5) - i_col)
                 y = FIRST_TOP_LEFT_Y + MARBLE_SIZE * i_row
                 self.rect_coordinates.append((x, y))
 
@@ -81,12 +82,12 @@ class Game(pygame.sprite.Sprite):
         
         screen.fill(BACKGROUND)
         iter_rect_coordinates = iter(self.rect_coordinates)
-        for i_row, row in enumerate(self.board_data):
+        for i_row, row in enumerate(self.data):
             for i_col, value in enumerate(row):
                 x, y = next(iter_rect_coordinates)
                 screen.blit(MARBLE_IMGS[value], (x, y))
                 self.rect_marbles[(i_row, i_col)] = MARBLE_IMGS[value].get_rect(topleft = (x, y))
-                pygame.draw.rect(screen, (255, 0, 140), pygame.Rect(x, y, 72, 72), 1) # Debug
+                pygame.draw.rect(screen, RED_2, pygame.Rect(x, y, 72, 72), 1) # Debug
             
     def normalize_coordinates(self, mouse_position) -> tuple:
         """TODO
@@ -99,10 +100,10 @@ class Game(pygame.sprite.Sprite):
         
         x, y = mouse_position
         r = (y - FIRST_TOP_LEFT_Y) // MARBLE_SIZE
-        c = (x - (FIRST_TOP_LEFT_X - 0.5 * (len(self.board_data[r]) - 5) * MARBLE_SIZE)) // MARBLE_SIZE
+        c = (x - (FIRST_TOP_LEFT_X - 0.5 * (len(self.data[r]) - 5) * MARBLE_SIZE)) // MARBLE_SIZE
         return r, int(c)
     
-    def check_move_validity(self, p1, p2) -> bool:
+    def move_single_marble(self, buffer_marble_center, target_x, target_y) -> bool:
         """TODO.
 
         Parameter
@@ -110,32 +111,49 @@ class Game(pygame.sprite.Sprite):
         screen: pygame.Surface (required)
             Game window
         """
-        distance = self.compute_distance_marbles(p1, p2)
-        
-        if distance <= MAX_DISTANCE_MARBLE:
-            new_color = 4 
-            valid_move = True
-        else:
-            new_color = 5
-            valid_move = False
+        target_marble = self.rect_marbles[(target_x, target_y)]
+        target_value = self.data[target_x][target_y]
+        d = self.compute_distance_marbles(buffer_marble_center, target_marble.center)
+        end_move = False
+        while not end_move:
+            # Targetted marble is too far away or is an enemy -> impossible
+            if d > MAX_DISTANCE_MARBLE or target_value == self.enemy:
+                valid_move = False
+                new_color = 5
+                end_move = True
+            # Targetted marble is in range and is free -> possible
+            elif d <= MAX_DISTANCE_MARBLE and target_value == 1:
+                valid_move = True
+                new_color = 4
+                end_move = True
+            elif target_value == self.current_color:
+                end_move = True                
+                
         return valid_move, new_color
+
     
-    def recolor_marbles(self, new_norm_x, new_norm_y, old_color, new_color):
-        """TODO.
+    def update_game(self, valid_move):
+        """Save a snapshot of the current grid to the SNAP_FOLDER.
 
         Parameter
         ---------
         screen: pygame.Surface (required)
             Game window
         """
-        if self.buffer_marbles_color:
-            recolor_x, recolor_y = self.buffer_marbles_color.pop()
-            if self.board_data[new_norm_x][new_norm_y] in (2, 3):
-                self.board_data[recolor_x][recolor_y] = 3
-            else:
-                self.board_data[recolor_x][recolor_y] = 1
-            self.board_data[new_norm_x][new_norm_y] = new_color
-            
+        pass
+    
+    def push_marbles(self):
+        pass
+    
+    
+    def enemy(self) -> int:
+        """Returns the enemy of the current color being played."""
+        return 3 if self.current_color == 2 else 2
+    
+    
+    # Static Methods
+    # --------------
+    
     @staticmethod
     def record_game(screen) -> None:
         """Save a snapshot of the current grid to the SNAP_FOLDER.
@@ -166,8 +184,7 @@ class Game(pygame.sprite.Sprite):
 
 
 def main():
-    board = Board()
-    game = Game(board)
+    game = Game()
 
 if __name__ == "__main__":
     main()
