@@ -76,7 +76,6 @@ MARBLE_FREE = pygame.image.load(
     ).convert_alpha()
 
 MARBLE_RED.get_rect().inflate_ip(2, 2)
-print(MARBLE_RED.get_rect())
 MARBLE_SIZE = MARBLE_RED.get_rect().size[0] # All marbles have the same size
 print(MARBLE_SIZE)
 MAX_DISTANCE_MARBLE = MARBLE_SIZE * sqrt(1.25) # Max distance between two neighbouring marbles (diagonal)
@@ -105,7 +104,7 @@ MARBLE_DEBUG = {
 
 # Initial configurations
 STANDARD = [
-    [2, 2, 2, 2, 2],
+    [1, 2, 2, 2, 2],
     [2, 2, 2, 2, 2, 2],
     [1, 1, 2, 2, 2, 1, 1],
     [1, 1, 1, 1, 1, 1, 1, 1],
@@ -193,6 +192,3 @@ THE_WALL = (
     [1, 1, 3, 1, 1],
 )
 
-
-if __name__ == "__main__":
-    pass

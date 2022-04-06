@@ -43,35 +43,40 @@ def main():
                     running = False
             # Selecting a single marble
             elif event.type == MOUSEBUTTONDOWN and not p_keys[K_LSHIFT]:
-                first_x, first_y = game.normalize_coordinates(event.pos)
-                if first_x >= 0 and first_y >= 0:
+                origin_x, origin_y = game.normalize_coordinates(event.pos)
+                if origin_x >= 0 and origin_y >= 0:
                     try:
-                        first_value = game.data[first_x][first_y]
+                        origin_value = game.data[origin_x][origin_y]
                     except IndexError:
                         print("Out of bounds!")
                         continue
                     else:
-                        if first_value > 1: # Cannot move free marbles
+                        if origin_value > 1: # Cannot move free marbles
                             moving = True
-                            buffer_value = MARBLE_IMGS[first_value]
-                            first_marble = game.rect_marbles[(first_x, first_y)]
-                            buffer_marble_center = first_marble.center # To keep track of the initial position
-                            print("NTM")
+                            origin_color = MARBLE_IMGS[origin_value]
+                            origin = game.rect_marbles[(origin_x, origin_y)]
+                            origin_center = origin.center # To keep track of the initial position
             # Updating board
             elif event.type == MOUSEBUTTONUP:
                 moving = False
                 change_color = False
-                game.update_game(valid_move)
+                game.update_game()
             # Moving single marble
             elif event.type == MOUSEMOTION and moving:
-                first_marble.move_ip(event.rel)
-                game.data[first_x][first_y] = 1
+                change_color = False
+                origin.move_ip(event.rel)
+                game.data[origin_x][origin_y] = 1
                 target_x, target_y = game.normalize_coordinates(event.pos)
-                if (target_x, target_y) != (first_x, first_y):
-                    change_color = True
-                    valid_move, new_color = game.move_single_marble(
-                        buffer_marble_center, target_x, target_y
+                target_center = game.rect_marbles[(target_x, target_y)].center
+                change_color =  True
+                d = game.compute_distance_marbles(origin_center, target_center)
+                if d <= MAX_DISTANCE_MARBLE:
+                    new_color = game.move_single_marble(
+                        origin_x, origin_y, origin_center, 
+                        target_x, target_y, target_center
                     )
+                else:
+                    new_color = 5
             # Selecting multiple marbles
             elif p_keys[K_LSHIFT]:
                 if not game.buffer_marbles_pos:
@@ -88,7 +93,7 @@ def main():
             target_marble = game.rect_marbles[(target_x, target_y)]
             screen.blit(MARBLE_IMGS[new_color], target_marble)
         if moving: 
-            screen.blit(buffer_value, first_marble)
+            screen.blit(origin_color, origin)
         pygame.display.update()
     pygame.quit()
     

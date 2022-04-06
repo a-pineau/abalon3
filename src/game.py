@@ -89,7 +89,7 @@ class Game(pygame.sprite.Sprite):
                 self.rect_marbles[(i_row, i_col)] = MARBLE_IMGS[value].get_rect(topleft = (x, y))
                 pygame.draw.rect(screen, RED_2, pygame.Rect(x, y, 72, 72), 1) # Debug
             
-    def normalize_coordinates(self, mouse_position) -> tuple:
+    def normalize_coordinates(self, position) -> tuple:
         """TODO
 
         Parameter
@@ -98,12 +98,13 @@ class Game(pygame.sprite.Sprite):
             Game window
         """
         
-        x, y = mouse_position
+        x, y = position
         r = (y - FIRST_TOP_LEFT_Y) // MARBLE_SIZE
         c = (x - (FIRST_TOP_LEFT_X - 0.5 * (len(self.data[r]) - 5) * MARBLE_SIZE)) // MARBLE_SIZE
         return r, int(c)
     
-    def move_single_marble(self, buffer_marble_center, target_x, target_y) -> bool:
+    def move_single_marble(self, origin_x, origin_y, origin_center, 
+                           target_x, target_y, target_center) -> bool:
         """TODO.
 
         Parameter
@@ -111,28 +112,57 @@ class Game(pygame.sprite.Sprite):
         screen: pygame.Surface (required)
             Game window
         """
-        target_marble = self.rect_marbles[(target_x, target_y)]
-        target_value = self.data[target_x][target_y]
-        d = self.compute_distance_marbles(buffer_marble_center, target_marble.center)
+        self.marbles_2_change.clear()
+        colors_seen = [self.current_color]
+        sumito = False        
         end_move = False
+        
         while not end_move:
+            target_value = self.data[target_x][target_y]
             # Targetted marble is too far away or is an enemy -> impossible
-            if d > MAX_DISTANCE_MARBLE or target_value == self.enemy:
-                valid_move = False
+            if target_value == self.enemy:
+                self.marbles_2_change[(origin_x, origin_y)] = self.current_color
                 new_color = 5
                 end_move = True
             # Targetted marble is in range and is free -> possible
-            elif d <= MAX_DISTANCE_MARBLE and target_value == 1:
-                valid_move = True
+            elif target_value == 1:
+                print("NTM")
+                self.marbles_2_change[(origin_x, origin_y)] = 1
+                self.marbles_2_change[(target_x, target_y)] = self.current_color
                 new_color = 4
                 end_move = True
-            elif target_value == self.current_color:
+            # Pushing marbles
+            else:
+                print(target_x, target_y)
+                new_color = self.current_color
                 end_move = True                
-                
-        return valid_move, new_color
+            
+            # origin_x, origin_y = target_x, target_y
+            # target_x, target_y = self.compute_next_spot(origin_center, target_center)
+        return new_color
 
+
+    @staticmethod
+    def compute_next_spot(origin, target):
+        """Compute the next spot of given marble coordinates.
+
+        Parameters
+        ----------
+        origin: tuple of integers (required)
+            Initial marble
+        target: tuple of integers (required)
+            Targetted marble
+        Returns
+        -------
+        spot_x, spot_y: tuple of integers
+            Coordinates of the next spot
+        """
+        
+        spot_x = 2 * target[0] - origin[0]
+        spot_y = 2 * target[1] - origin[1]
+        return spot_x, spot_y
     
-    def update_game(self, valid_move):
+    def update_game(self):
         """Save a snapshot of the current grid to the SNAP_FOLDER.
 
         Parameter
@@ -140,7 +170,10 @@ class Game(pygame.sprite.Sprite):
         screen: pygame.Surface (required)
             Game window
         """
-        pass
+        for pos, value in self.marbles_2_change.items():
+            x, y = pos
+            self.data[x][y] = value
+        self.marbles_2_change.clear()
     
     def push_marbles(self):
         pass
@@ -187,6 +220,7 @@ def main():
     game = Game()
 
 if __name__ == "__main__":
+    print("tg")
     main()
 
 
