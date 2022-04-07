@@ -12,6 +12,7 @@ import math
 import pygame
 from board import Board 
 from game import Game
+from display_features import *
 from popup_win_game import PopUpWindow
 from constants import *
 from PyQt5.QtWidgets import (QMainWindow, QApplication, QGridLayout, QWidget, QLayout)
@@ -27,7 +28,6 @@ def main():
     running = True
     moving = False
     change_color = False
-    valid_move = False
     
     while running:
         # Events handling
@@ -44,6 +44,7 @@ def main():
             # Selecting a single marble
             elif event.type == MOUSEBUTTONDOWN and not p_keys[K_LSHIFT]:
                 origin_x, origin_y = game.normalize_coordinates(event.pos)
+                print("ORIGIN:", game.rect_marbles[(origin_x, origin_y)].center)
                 if origin_x >= 0 and origin_y >= 0:
                     try:
                         origin_value = game.data[origin_x][origin_y]
@@ -53,45 +54,44 @@ def main():
                     else:
                         if origin_value > 1: # Cannot move free marbles
                             moving = True
+                            valid_move = False
                             origin_color = MARBLE_IMGS[origin_value]
                             origin = game.rect_marbles[(origin_x, origin_y)]
                             origin_center = origin.center # To keep track of the initial position
-            # Updating board
-            elif event.type == MOUSEBUTTONUP:
-                moving = False
-                change_color = False
-                game.update_game()
             # Moving single marble
             elif event.type == MOUSEMOTION and moving:
                 change_color = False
                 origin.move_ip(event.rel)
-                game.data[origin_x][origin_y] = 1
                 target_x, target_y = game.normalize_coordinates(event.pos)
                 target_center = game.rect_marbles[(target_x, target_y)].center
                 change_color =  True
                 d = game.compute_distance_marbles(origin_center, target_center)
-                if d <= MAX_DISTANCE_MARBLE:
-                    new_color = game.move_single_marble(
+                if d <= MAX_DISTANCE_MARBLE and target_center != origin_center:
+                    valid_move = game.move_single_marble(
                         origin_x, origin_y, origin_center, 
                         target_x, target_y, target_center
                     )
-                else:
-                    new_color = 5
+            # Updating board
+            elif event.type == MOUSEBUTTONUP:
+                moving = False
+                change_color = False
+                game.update_game(valid_move)
             # Selecting multiple marbles
             elif p_keys[K_LSHIFT]:
-                if not game.buffer_marbles_pos:
-                    game.set_buffers()
-                if p_mouse[0]:
-                    mouse_pos = pygame.mouse.get_pos()
-                    for rect in game.marbles_rect:
-                        if game.is_inside_marble(mouse_pos, rect.center):
-                            game.select_marbles_range(rect)
-                            game.compute_new_marbles_range(rect)
-
+                pass
+        # Displaying
         game.display_marbles(screen)
         if change_color:
+            origin_marble = game.rect_marbles[(origin_x, origin_y)]
             target_marble = game.rect_marbles[(target_x, target_y)]
-            screen.blit(MARBLE_IMGS[new_color], target_marble)
+            if not valid_move:
+                screen.blit(MARBLE_RED, target_marble)
+            # Because of overlapping...
+            screen.blit(MARBLE_FREE, origin_marble)
+            if valid_move:
+                end_x, end_y = list(game.marbles_2_change.keys())[-1]
+                end_center = game.rect_marbles[(end_x, end_y)].center
+                draw_circled_line(origin_center, end_center, screen, GREEN3, 3)
         if moving: 
             screen.blit(origin_color, origin)
         pygame.display.update()

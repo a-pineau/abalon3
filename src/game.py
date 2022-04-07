@@ -87,7 +87,7 @@ class Game(pygame.sprite.Sprite):
                 x, y = next(iter_rect_coordinates)
                 screen.blit(MARBLE_IMGS[value], (x, y))
                 self.rect_marbles[(i_row, i_col)] = MARBLE_IMGS[value].get_rect(topleft = (x, y))
-                pygame.draw.rect(screen, RED_2, pygame.Rect(x, y, 72, 72), 1) # Debug
+                pygame.draw.rect(screen, RED2, pygame.Rect(x, y, 72, 72), 1) # Debug
             
     def normalize_coordinates(self, position) -> tuple:
         """TODO
@@ -112,35 +112,81 @@ class Game(pygame.sprite.Sprite):
         screen: pygame.Surface (required)
             Game window
         """
+        print("LOL")
         self.marbles_2_change.clear()
+        self.marbles_2_change[(origin_x, origin_y)] = 1
+        enemy = self.enemy()
+        # To keep track of the colors we meet
         colors_seen = [self.current_color]
+        valid_move = False
         sumito = False        
         end_move = False
         
         while not end_move:
-            target_value = self.data[target_x][target_y]
-            # Targetted marble is too far away or is an enemy -> impossible
-            if target_value == self.enemy:
+            # Checking if we are killing a marble (out of bounds)
+            try:
+                self.rect_marbles[(target_x, target_y)].center
+            except KeyError:
                 self.marbles_2_change[(origin_x, origin_y)] = self.current_color
-                new_color = 5
-                end_move = True
-            # Targetted marble is in range and is free -> possible
-            elif target_value == 1:
-                print("NTM")
-                self.marbles_2_change[(origin_x, origin_y)] = 1
-                self.marbles_2_change[(target_x, target_y)] = self.current_color
-                new_color = 4
-                end_move = True
-            # Pushing marbles
+                valid_move = True
+                break
             else:
-                print(target_x, target_y)
-                new_color = self.current_color
-                end_move = True                
+                target_center = self.rect_marbles[(target_x, target_y)].center
+                target_value = self.data[target_x][target_y]
+                
+            if target_value in (enemy, self.current_color):
+                colors_seen.append(target_value)
+            own_marble = target_value == self.current_color
+            other_marble = target_value in (enemy, 1)
+            too_much_marbles = colors_seen.count(self.current_color) > 3
+            sumito = enemy in colors_seen
+            wrong_sumito = (colors_seen.count(enemy) >= colors_seen.count(self.current_color)
+                            or enemy in colors_seen and target_value == self.current_color)
             
-            # origin_x, origin_y = target_x, target_y
-            # target_x, target_y = self.compute_next_spot(origin_center, target_center)
-        return new_color
+            # Impossible move
+            if too_much_marbles or wrong_sumito:
+                valid_move = False
+                break
+            # If we keep finding our own marbles
+            if own_marble and (target_x, target_y) not in self.marbles_2_change.keys():
+                self.marbles_2_change[(target_x, target_y)] = self.current_color
+            # Meeting an enemy or a free spot
+            elif other_marble:
+                if sumito:
+                    print(colors_seen)
+                    print("target center", target_center)
+                    self.marbles_2_change[(origin_x, origin_y)] = self.current_color
+                    self.marbles_2_change[(target_x, target_y)] = enemy
+                else:
+                    self.marbles_2_change[(target_x, target_y)] = self.current_color
+                # Loop ends if its a free spot unless a single marble is trying to push
+                if target_value == 1:
+                    valid_move = True
+                    end_move = True
+            # Getting the next spot
+            next_spot = self.compute_next_spot(origin_center, target_center)
+            # print("origin_center=", origin_center)
+            # print("target_center=", target_center)
+            # print("next_spot=", next_spot)
+            origin_center = target_center
+            origin_x, origin_y = self.normalize_coordinates(origin_center)
+            target_x, target_y = self.normalize_coordinates(next_spot)
+            
+        return valid_move
+    
+    def update_game(self, valid_move):
+        """Save a snapshot of the current grid to the SNAP_FOLDER.
 
+        Parameter
+        ---------
+        screen: pygame.Surface (required)
+            Game window
+        """
+        if valid_move:
+            for pos, value in self.marbles_2_change.items():
+                x, y = pos
+                self.data[x][y] = value
+        self.marbles_2_change.clear()
 
     @staticmethod
     def compute_next_spot(origin, target):
@@ -161,23 +207,6 @@ class Game(pygame.sprite.Sprite):
         spot_x = 2 * target[0] - origin[0]
         spot_y = 2 * target[1] - origin[1]
         return spot_x, spot_y
-    
-    def update_game(self):
-        """Save a snapshot of the current grid to the SNAP_FOLDER.
-
-        Parameter
-        ---------
-        screen: pygame.Surface (required)
-            Game window
-        """
-        for pos, value in self.marbles_2_change.items():
-            x, y = pos
-            self.data[x][y] = value
-        self.marbles_2_change.clear()
-    
-    def push_marbles(self):
-        pass
-    
     
     def enemy(self) -> int:
         """Returns the enemy of the current color being played."""

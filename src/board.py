@@ -1,11 +1,8 @@
-import math
-import random
 import pygame
 
 from pygame import gfxdraw
 from pygame.locals import *
 from constants import *
-from copy import deepcopy
 
 pygame.init()
 
