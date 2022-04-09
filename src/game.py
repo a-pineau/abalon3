@@ -2,7 +2,6 @@ import math
 import random
 import pygame
 
-from board import Board
 from pygame import gfxdraw
 from pygame.locals import *
 from constants import *
@@ -48,10 +47,12 @@ class Game(pygame.sprite.Sprite):
         
         super().__init__()
         self.data = configuration
+        self.current_color = 2 # Change to random choice
         self.rect_marbles = {}
         self.rect_coordinates = []
+        self.colors_2_change = {}
         self.marbles_2_change = {}
-        self.current_color = 2 # Change to random choice
+        self.range_distance = None
         self.compute_rect_coordinates()
         
     def compute_rect_coordinates(self):   
@@ -112,12 +113,11 @@ class Game(pygame.sprite.Sprite):
         screen: pygame.Surface (required)
             Game window
         """
-        print("LOL")
         self.marbles_2_change.clear()
         self.marbles_2_change[(origin_x, origin_y)] = 1
+        buffer_target_x, buffer_target_y = target_x, target_y
         enemy = self.enemy()
-        # To keep track of the colors we meet
-        colors_seen = [self.current_color]
+        colors_seen = [self.current_color] # To keep track of the colors we meet
         valid_move = False
         sumito = False        
         end_move = False
@@ -138,14 +138,14 @@ class Game(pygame.sprite.Sprite):
                 colors_seen.append(target_value)
             own_marble = target_value == self.current_color
             other_marble = target_value in (enemy, 1)
+            # Cannot push more than 3 marbles
             too_much_marbles = colors_seen.count(self.current_color) > 3
             sumito = enemy in colors_seen
             wrong_sumito = (colors_seen.count(enemy) >= colors_seen.count(self.current_color)
                             or enemy in colors_seen and target_value == self.current_color)
             
-            # Impossible move
             if too_much_marbles or wrong_sumito:
-                valid_move = False
+                valid_move = False # Impossible move
                 break
             # If we keep finding our own marbles
             if own_marble and (target_x, target_y) not in self.marbles_2_change.keys():
@@ -153,26 +153,59 @@ class Game(pygame.sprite.Sprite):
             # Meeting an enemy or a free spot
             elif other_marble:
                 if sumito:
-                    print(colors_seen)
-                    print("target center", target_center)
                     self.marbles_2_change[(origin_x, origin_y)] = self.current_color
                     self.marbles_2_change[(target_x, target_y)] = enemy
                 else:
                     self.marbles_2_change[(target_x, target_y)] = self.current_color
-                # Loop ends if its a free spot unless a single marble is trying to push
+                # Loop ends if a free spot is reached
                 if target_value == 1:
                     valid_move = True
                     end_move = True
             # Getting the next spot
             next_spot = self.compute_next_spot(origin_center, target_center)
-            # print("origin_center=", origin_center)
-            # print("target_center=", target_center)
-            # print("next_spot=", next_spot)
+            # Updating origin/target positions
             origin_center = target_center
             origin_x, origin_y = self.normalize_coordinates(origin_center)
             target_x, target_y = self.normalize_coordinates(next_spot)
             
+        if not valid_move:
+            self.colors_2_change[(buffer_target_x, buffer_target_y)] = MARBLE_RED
         return valid_move
+    
+    def move_multiple_marbles(self, mouse_position):
+        """TODO.
+
+        Parameter
+        ---------
+        screen: pygame.Surface (required)
+            Game window
+        """
+        norm_x, norm_y = self.normalize_coordinates(mouse_position)
+        self.marbles_2_change[(norm_x, norm_y)] = 1
+        if self.check_range_validity():
+           self.colors_2_change[(norm_x, norm_y)] = MARBLE_PURPLE
+        
+    def check_range_validity(self) -> bool:
+        """TODO.
+
+        Parameter
+        ---------
+        screen: pygame.Surface (required)
+            Game window
+        """
+        coordinates = [self.rect_marbles[(x, y)].center for x, y in self.marbles_2_change]
+        if len(coordinates) == 2:
+            p1, p2 = coordinates[0], coordinates[1]
+            self.range_distance = self.compute_distance_marbles(p1, p2)
+            return True # A 2-range marbles is always valid as only neighbors can be selected
+        elif len(coordinates) == 3:
+            p1, p2 = coordinates[-2], coordinates[-1]
+            d = self.compute_distance_marbles(p1, p2)
+            if d != self.range_distance:
+                return False # A misaligned marble results in a non-valid range
+        elif len(coordinates) > 3:
+            return False # A misaligned marble results in a non-valid range
+        return True 
     
     def update_game(self, valid_move):
         """Save a snapshot of the current grid to the SNAP_FOLDER.
@@ -187,6 +220,8 @@ class Game(pygame.sprite.Sprite):
                 x, y = pos
                 self.data[x][y] = value
         self.marbles_2_change.clear()
+        self.colors_2_change.clear()
+        self.range_distance = None
 
     @staticmethod
     def compute_next_spot(origin, target):

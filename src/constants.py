@@ -89,6 +89,8 @@ SKULL = pygame.transform.rotozoom(SKULL, 0, 0.7)  # Adjusting size
 FIRST_TOP_LEFT_X = SIZE_X // 2 - 2.5 * MARBLE_SIZE
 FIRST_TOP_LEFT_Y = 25
 MARBLE_IMGS = {
+    -2: MARBLE_PURPLE,
+    -3: DEAD_YELLOW,
     1: MARBLE_FREE, 
     2: MARBLE_BLUE, 
     3: MARBLE_YELLOW,
