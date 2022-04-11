@@ -43,20 +43,18 @@ def main():
             # Selecting a single marble
             elif event.type == MOUSEBUTTONDOWN and not p_keys[K_LSHIFT]:
                 origin_x, origin_y = game.normalize_coordinates(event.pos)
-                print("ORIGIN:", game.rect_marbles[(origin_x, origin_y)].center)
-                if origin_x >= 0 and origin_y >= 0:
-                    try:
-                        origin_value = game.data[origin_x][origin_y]
-                    except IndexError:
-                        print("Out of bounds!")
-                        continue
-                    else:
-                        if origin_value == 1: # Cannot move free marbles
-                            continue
-                        moving = True
-                        valid_move = False
-                        origin = game.rect_marbles[(origin_x, origin_y)]
-                        origin_center = origin.center # To keep track of the initial position
+                print("ORIGIN CENTER=", origin_x, origin_y)
+
+                move_data = game.check_pick_validity(origin_x, origin_y)
+                if not move_data["valid"]:
+                    continue
+                else:
+                    moving = True
+                    valid_move = False
+                    origin = move_data["origin_marble"]
+                    origin_center = move_data["origin_center"]
+                    origin_value = move_data["origin_value"]
+                    print("ORIGIN REAL=", origin_center)
             # Updating board
             elif event.type == MOUSEBUTTONUP:
                 moving = False
@@ -88,7 +86,7 @@ def main():
             screen.blit(MARBLE_FREE, origin_marble)
             screen.blit(MARBLE_IMGS[origin_value], origin)
         # Drawing a line to indicate which push move is being done
-        if valid_move and game.marbles_2_change and not game.range_distance:
+        if valid_move and game.marbles_2_change and not game.colors_2_change:
             end_x, end_y = list(game.marbles_2_change.keys())[-1]
             end_marble = game.rect_marbles[(end_x, end_y)]
             for coords, value in game.marbles_2_change.items():

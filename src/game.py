@@ -104,6 +104,33 @@ class Game(pygame.sprite.Sprite):
         c = (x - (FIRST_TOP_LEFT_X - 0.5 * (len(self.data[r]) - 5) * MARBLE_SIZE)) // MARBLE_SIZE
         return r, int(c)
     
+    def check_pick_validity(self, origin_x, origin_y) -> dict:
+        """TODO.
+
+        Parameter
+        ---------
+        screen: pygame.Surface (required)
+            Game window
+        """
+        move_data = {
+            "valid": False, 
+            "origin_value": None,
+            "origin_marble": None,
+            "origin_center": None,
+        }
+        if origin_x >= 0 and origin_y >= 0:
+            try:
+                move_data["origin_value"] = self.data[origin_x][origin_y]
+            except IndexError:
+                return move_data
+            else:
+                if move_data["origin_value"] != self.current_color: # Can move only own marbles
+                    return move_data
+                move_data["valid"] = True
+                move_data["origin_marble"] = self.rect_marbles[(origin_x, origin_y)]
+                move_data["origin_center"] = move_data["origin_marble"].center
+        return move_data       
+    
     def move_single_marble(self, origin_x, origin_y, origin_center, 
                            target_x, target_y, target_center) -> bool:
         """TODO.
@@ -181,11 +208,43 @@ class Game(pygame.sprite.Sprite):
             Game window
         """
         norm_x, norm_y = self.normalize_coordinates(mouse_position)
-        self.marbles_2_change[(norm_x, norm_y)] = 1
-        if self.check_range_validity():
-           self.colors_2_change[(norm_x, norm_y)] = MARBLE_PURPLE
+        local_value = self.data[norm_x][norm_y]
+        if local_value == self.current_color:
+            self.marbles_2_change[(norm_x, norm_y)] = 1
+        coordinates = [self.rect_marbles[(x, y)].center for x, y in self.marbles_2_change.keys()]
+        if local_value == self.current_color:
+            if self.check_range_validity(coordinates):
+                self.colors_2_change[(norm_x, norm_y)] = MARBLE_PURPLE 
+            else:
+                self.marbles_2_change.pop((norm_x, norm_y))
+                return False
+        range_length = len(self.marbles_2_change)
+        if local_value == 1 and coordinates and range_length <= 3:
+            print("fun", norm_x, norm_y)
+            self.marbles_2_change[(norm_x, norm_y)] = 1
+            j, k = 1, 1
+            if coordinates[0][1] == coordinates[1][1]: # Lateral range
+                k = 0
+            if coordinates[-1][0] > coordinates[0][0]:
+                j = -1
+            for i in range(1, range_length): # Computing the new range
+                new_x = coordinates[-1][0] + j * MARBLE_SIZE * i 
+                new_y = coordinates[-1][1] + j * MARBLE_SIZE * k
+                new_norm_x, new_norm_y = self.normalize_coordinates((new_x, new_y))
+                new_local_value = self.data[new_norm_x][new_norm_y]
+                print(new_x, new_y, new_norm_x, new_norm_y, new_local_value)
+                if new_local_value != 1:
+                    print("what")
+                    return False # New range can only contain free spots
+                self.marbles_2_change[(new_norm_x, new_norm_y)] = self.current_color
+                self.colors_2_change[(new_norm_x, new_norm_y)] = MARBLE_GREEN
+            print(self.colors_2_change)
+
+
+
         
-    def check_range_validity(self) -> bool:
+                
+    def check_range_validity(self, coordinates) -> bool:
         """TODO.
 
         Parameter
@@ -193,18 +252,13 @@ class Game(pygame.sprite.Sprite):
         screen: pygame.Surface (required)
             Game window
         """
-        coordinates = [self.rect_marbles[(x, y)].center for x, y in self.marbles_2_change]
-        if len(coordinates) == 2:
-            p1, p2 = coordinates[0], coordinates[1]
-            self.range_distance = self.compute_distance_marbles(p1, p2)
-            return True # A 2-range marbles is always valid as only neighbors can be selected
-        elif len(coordinates) == 3:
-            p1, p2 = coordinates[-2], coordinates[-1]
-            d = self.compute_distance_marbles(p1, p2)
-            if d != self.range_distance:
-                return False # A misaligned marble results in a non-valid range
+        if len(coordinates) == 3:
+            d_first_2_second = self.compute_distance_marbles(coordinates[0], coordinates[1])
+            d_second_2_last = self.compute_distance_marbles(coordinates[-1], coordinates[-2])
+            if d_second_2_last != d_first_2_second:
+                return False # A misaligned marble results in a invalid range
         elif len(coordinates) > 3:
-            return False # A misaligned marble results in a non-valid range
+            return False # A range of more than 3 marbles is invalid
         return True 
     
     def update_game(self, valid_move):
