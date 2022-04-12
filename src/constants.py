@@ -15,8 +15,6 @@ from pygame.locals import *
 pygame.init()
 useless_screen = pygame.display.set_mode()
 
-SIZE_X, SIZE_Y  = 820, 680
-FIRST_TOP_LEFT = 400
 SHIFT_X = SHIFT_Y = 36
 FONT = pygame.font.SysFont("Calibri", 42)
 
@@ -86,8 +84,10 @@ SKULL = pygame.image.load(
 ).convert_alpha()
 SKULL = pygame.transform.rotozoom(SKULL, 0, 0.7)  # Adjusting size
 
-FIRST_TOP_LEFT_X = SIZE_X // 2 - 2.5 * MARBLE_SIZE
-FIRST_TOP_LEFT_Y = 25
+SIZE_X = 820
+FIRST_TOP_LEFT_X = SIZE_X // 2 - 2.5 * MARBLE_SIZE # Centering board inside game window
+FIRST_TOP_LEFT_Y = 75
+SIZE_Y = 2 * FIRST_TOP_LEFT_Y + 9 * MARBLE_SIZE
 MARBLE_IMGS = {
     -2: MARBLE_PURPLE,
     -3: DEAD_YELLOW,
@@ -109,7 +109,7 @@ STANDARD = [
     [3, 2, 2, 2, 2],
     [2, 2, 2, 2, 2, 2],
     [1, 1, 2, 2, 2, 3, 1],
-    [1, 1, 1, 1, 1, 1, 1, 1],
+    [1, 1, 1, 3, 1, 1, 1, 1],
     [1, 1, 1, 1, 1, 1, 1, 1, 1],
     [1, 1, 1, 1, 1, 1, 1, 1],
     [1, 1, 3, 3, 3, 1, 1],

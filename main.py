@@ -43,8 +43,6 @@ def main():
             # Selecting a single marble
             elif event.type == MOUSEBUTTONDOWN and not p_keys[K_LSHIFT]:
                 origin_x, origin_y = game.normalize_coordinates(event.pos)
-                print("ORIGIN CENTER=", origin_x, origin_y)
-
                 move_data = game.check_pick_validity(origin_x, origin_y)
                 if not move_data["valid"]:
                     continue
@@ -54,7 +52,7 @@ def main():
                     origin = move_data["origin_marble"]
                     origin_center = move_data["origin_center"]
                     origin_value = move_data["origin_value"]
-                    print("ORIGIN REAL=", origin_center)
+                    print("ORIGIN CENTER", origin_center)
             # Updating board
             elif event.type == MOUSEBUTTONUP:
                 moving = False
@@ -64,7 +62,7 @@ def main():
                 origin.move_ip(event.rel)
                 target_x, target_y = game.normalize_coordinates(event.pos)
                 target_center = game.rect_marbles[(target_x, target_y)].center
-                d = game.compute_distance_marbles(origin_center, target_center)
+                d = game.compute_distance_marbles(origin_center,  target_center)
                 if d <= MAX_DISTANCE_MARBLE and target_center != origin_center:
                     valid_move = game.move_single_marble(
                         origin_x, origin_y, origin_center, 
@@ -73,7 +71,7 @@ def main():
             # Moving multiple marbles
             elif p_keys[K_LSHIFT]:
                 if p_mouse[0]:
-                    game.move_multiple_marbles(event.pos)
+                    valid_move = game.move_multiple_marbles(pygame.mouse.get_pos())
                 
         # Overall display
         game.display_marbles(screen)
