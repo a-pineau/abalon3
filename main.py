@@ -61,6 +61,8 @@ def main():
             elif event.type == MOUSEMOTION and moving:
                 origin.move_ip(event.rel)
                 target_x, target_y = game.normalize_coordinates(event.pos)
+                if game.exception_digger(target_x, target_y, game.rect_marbles, KeyError):
+                    continue
                 target_center = game.rect_marbles[(target_x, target_y)].center
                 d = game.compute_distance_marbles(origin_center,  target_center)
                 if d <= MAX_DISTANCE_MARBLE and target_center != origin_center:
