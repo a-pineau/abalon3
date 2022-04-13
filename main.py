@@ -27,7 +27,8 @@ def main():
     running = True
     moving = False
     valid_move = False
-    
+    confirm_move = False
+
     while running:
         # Events handling
         for event in pygame.event.get():
@@ -36,10 +37,14 @@ def main():
             # Quiting game
             if event.type == QUIT:
                 running = False
-            # Quiting (w/ escape)/Resetting game
             elif event.type == KEYDOWN:
+                 # Quiting (w/ escape)/Resetting game
                 if event.key == K_ESCAPE:
                     running = False
+                # Confirm move
+                elif event.key == K_SPACE:
+                    moving = False
+                    game.update_game(valid_move, True)
             # Selecting a single marble
             elif event.type == MOUSEBUTTONDOWN and not p_keys[K_LSHIFT]:
                 origin_x, origin_y = game.normalize_coordinates(event.pos)
@@ -56,7 +61,7 @@ def main():
             # Updating board
             elif event.type == MOUSEBUTTONUP:
                 moving = False
-                game.update_game(valid_move)
+                game.update_game(valid_move, False)
             # Moving single marble
             elif event.type == MOUSEMOTION and moving:
                 origin.move_ip(event.rel)
@@ -77,6 +82,9 @@ def main():
                 
         # Overall display
         game.display_marbles(screen)
+        # Confirmation message
+        # if valid_move:
+        #     display_message(screen, CONFIRM_MOVE, 30, (SIZE_X / 2, FIRST_TOP_LEFT_Y / 2), WHITE)
         # Changing color when mouseovering
         for coords, new_color in game.colors_2_change.items():
             marble = game.rect_marbles[coords]

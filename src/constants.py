@@ -15,7 +15,6 @@ from pygame.locals import *
 pygame.init()
 useless_screen = pygame.display.set_mode()
 
-SHIFT_X = SHIFT_Y = 36
 FONT = pygame.font.SysFont("Calibri", 42)
 
 # Directories
@@ -103,6 +102,9 @@ MARBLE_DEBUG = {
     MARBLE_YELLOW: "Yellow",
     MARBLE_BROWN: "Brown",
 }
+
+# Messages
+CONFIRM_MOVE = "Hit the spacebar to confirm your move"
 
 # Initial configurations
 STANDARD = [
