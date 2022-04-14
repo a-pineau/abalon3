@@ -27,7 +27,8 @@ def main():
     running = True
     moving = False
     valid_move = False
-    confirm_move = False
+    single = False
+    multiple = False
 
     while running:
         # Events handling
@@ -44,9 +45,11 @@ def main():
                 # Confirm move
                 elif event.key == K_SPACE:
                     moving = False
-                    game.update_game(valid_move, True)
+                    single = False
+                    game.update_game(valid_move)
             # Selecting a single marble
             elif event.type == MOUSEBUTTONDOWN and not p_keys[K_LSHIFT]:
+                single = True
                 origin_x, origin_y = game.normalize_coordinates(event.pos)
                 move_data = game.check_pick_validity(origin_x, origin_y)
                 if not move_data["valid"]:
@@ -61,7 +64,8 @@ def main():
             # Updating board
             elif event.type == MOUSEBUTTONUP:
                 moving = False
-                game.update_game(valid_move, False)
+                single = False
+                game.clear_buffers()
             # Moving single marble
             elif event.type == MOUSEMOTION and moving:
                 origin.move_ip(event.rel)
@@ -82,10 +86,7 @@ def main():
                 
         # Overall display
         game.display_marbles(screen)
-        # Confirmation message
-        # if valid_move:
-        #     display_message(screen, CONFIRM_MOVE, 30, (SIZE_X / 2, FIRST_TOP_LEFT_Y / 2), WHITE)
-        # Changing color when mouseovering
+        # :)))))))))))))
         for coords, new_color in game.colors_2_change.items():
             marble = game.rect_marbles[coords]
             screen.blit(new_color, marble)
@@ -94,14 +95,20 @@ def main():
             screen.blit(MARBLE_FREE, origin_marble)
             screen.blit(MARBLE_IMGS[origin_value], origin)
         # Drawing a line to indicate which push move is being done
-        if valid_move and game.marbles_2_change and not game.colors_2_change:
-            end_x, end_y = list(game.marbles_2_change.keys())[-1]
-            end_marble = game.rect_marbles[(end_x, end_y)]
-            for coords, value in game.marbles_2_change.items():
-                if value > 1: 
+        if valid_move and game.marbles_2_change:
+            display_message(screen, CONFIRM_MOVE, 30, (SIZE_X / 2, FIRST_TOP_LEFT_Y / 2), WHITE)
+            if single:
+                end_x, end_y = list(game.marbles_2_change.keys())[-1]
+                end_marble = game.rect_marbles[(end_x, end_y)]
+                for coords, value in game.marbles_2_change.items():
+                    if value > 1: 
+                        marble = game.rect_marbles[coords]
+                        screen.blit(MARBLE_IMGS[value], marble)
+                draw_circled_line(origin_center, end_marble.center, screen, GREEN3, 3)
+            elif multiple:
+                for coords, new_color in game.colors_2_change.items():
                     marble = game.rect_marbles[coords]
-                    screen.blit(MARBLE_IMGS[value], marble)
-            draw_circled_line(origin_center, end_marble.center, screen, GREEN3, 3)
+                    screen.blit(new_color, marble)
         # Updating screen
         pygame.display.update()
     pygame.quit()

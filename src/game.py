@@ -140,7 +140,7 @@ class Game(pygame.sprite.Sprite):
         screen: pygame.Surface (required)
             Game window
         """
-        self.marbles_2_change.clear()
+        self.clear_buffers()
         self.marbles_2_change[(origin_x, origin_y)] = 1
         buffer_target_x, buffer_target_y = target_x, target_y
         enemy = self.enemy()
@@ -247,6 +247,7 @@ class Game(pygame.sprite.Sprite):
             v_y = (target_y - origin_y) / MARBLE_SIZE
             new_coords = [self.compute_next_spot(c, v_x, v_y) for c in coordinates]
             new_coords = [self.normalize_coordinates((x, y)) for x, y in new_coords]
+            # Checking if the new range is valid (out of bounds marble or occupied spot in range)
             if (any(self.exception_digger(x, y, self.data, IndexError) for x, y in new_coords) 
                 or any(self.data[x][y] != 1 for x, y in new_coords)):
                 if MARBLE_RED not in self.colors_2_change.values():
@@ -276,7 +277,7 @@ class Game(pygame.sprite.Sprite):
             return False # A range of more than 3 marbles is invalid
         return True 
     
-    def update_game(self, valid_move, confirm_move):
+    def update_game(self, valid_move):
         """Save a snapshot of the current grid to the SNAP_FOLDER.
 
         Parameter
@@ -284,10 +285,21 @@ class Game(pygame.sprite.Sprite):
         screen: pygame.Surface (required)
             Game window
         """
-        if valid_move and confirm_move:
+        if valid_move:
             for pos, value in self.marbles_2_change.items():
                 x, y = pos
                 self.data[x][y] = value
+        self.clear_buffers()
+
+    def clear_buffers(self):
+        """TODO.
+
+        Parameter
+        ---------
+        screen: pygame.Surface (required)
+            Game window
+        """
+        
         self.marbles_2_change.clear()
         self.colors_2_change.clear()
         self.buffer_dead_marble.clear()
