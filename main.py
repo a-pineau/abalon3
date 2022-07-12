@@ -29,6 +29,8 @@ def main():
     valid_move = False
     single = False
     multiple = False
+    yy = 0
+    crash_test = MARBLE_PURPLE.get_rect(topleft = (400, yy))
 
     while running:
         # Events handling
@@ -42,11 +44,15 @@ def main():
                  # Quiting (w/ escape)/Resetting game
                 if event.key == K_ESCAPE:
                     running = False
-                # Confirm move
+                # Confirming move
                 elif event.key == K_SPACE:
                     moving = False
                     single = False
                     game.update_game(valid_move)
+                # Resetting game
+                elif event.key == K_r:
+                    print("LOO")
+                    game.reset_game()
             # Selecting a single marble
             elif event.type == MOUSEBUTTONDOWN and not p_keys[K_LSHIFT]:
                 single = True
@@ -96,7 +102,7 @@ def main():
             screen.blit(MARBLE_IMGS[origin_value], origin)
         # Drawing a line to indicate which push move is being done
         if valid_move and game.marbles_2_change:
-            display_message(screen, CONFIRM_MOVE, 30, (SIZE_X / 2, FIRST_TOP_LEFT_Y / 2), WHITE)
+            display_message(screen, CONFIRM_MOVE, 30, (SIZE_X / 2, FIRST_TOP_LEFT_Y / 2), GREEN3)
             if single:
                 end_x, end_y = list(game.marbles_2_change.keys())[-1]
                 end_marble = game.rect_marbles[(end_x, end_y)]
@@ -109,6 +115,8 @@ def main():
                 for coords, new_color in game.colors_2_change.items():
                     marble = game.rect_marbles[coords]
                     screen.blit(new_color, marble)
+        elif not valid_move and game.colors_2_change:
+            display_message(screen, WRONG_MOVE, 30, (SIZE_X / 2, FIRST_TOP_LEFT_Y / 2), RED2)
         # Updating screen
         pygame.display.update()
     pygame.quit()

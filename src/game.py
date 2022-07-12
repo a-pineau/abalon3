@@ -46,14 +46,14 @@ class Game(pygame.sprite.Sprite):
         """
         
         super().__init__()
-        self.data = configuration
-        self.current_color = 2 # Change to random choice
+        self.data = deepcopy(configuration)
+        self.current_color = 3 # Change to random choice
         self.rect_marbles = {}
         self.rect_coordinates = []
         self.colors_2_change = {}
         self.marbles_2_change = {}
-        self.range_distance = None
         self.buffer_dead_marble = {}
+        self.dead_marbles = {}
         self.compute_rect_coordinates()
         
     def compute_rect_coordinates(self):   
@@ -89,10 +89,11 @@ class Game(pygame.sprite.Sprite):
                 x, y = next(iter_rect_coordinates)
                 screen.blit(MARBLE_IMGS[value], (x, y))
                 self.rect_marbles[(i_row, i_col)] = MARBLE_IMGS[value].get_rect(topleft = (x, y))
-                pygame.draw.rect(screen, RED2, pygame.Rect(x, y, 72, 72), 1) # Debug
+                # pygame.draw.rect(screen, RED2, pygame.Rect(x, y, 72, 72), 1) # Debug
         for buffer_marble, buffer_color in self.buffer_dead_marble.items():
             screen.blit(buffer_color, buffer_marble)
-            
+            screen.blit(SKULL, (buffer_marble[0] + MARBLE_SIZE / 5, buffer_marble[1] + MARBLE_SIZE / 5))
+
     def normalize_coordinates(self, position) -> tuple:
         """TODO
 
@@ -145,7 +146,6 @@ class Game(pygame.sprite.Sprite):
         buffer_target_x, buffer_target_y = target_x, target_y
         enemy = self.enemy()
         colors_seen = [self.current_color] # To keep track of the colors we meet
-        valid_move = False
         sumito = False        
         end_move = False
         
@@ -159,8 +159,7 @@ class Game(pygame.sprite.Sprite):
                 if self.buffer_dead_marble:
                     self.buffer_dead_marble.clear()
                 self.buffer_dead_marble[(dead_x, dead_y)] = DEAD_YELLOW
-                valid_move = True
-                break
+                return True
             else:
                 target_center = self.rect_marbles[(target_x, target_y)].center
                 target_value = self.data[target_x][target_y]
@@ -175,8 +174,8 @@ class Game(pygame.sprite.Sprite):
             wrong_sumito = (colors_seen.count(enemy) >= colors_seen.count(self.current_color)
                             or enemy in colors_seen and target_value == self.current_color)
             if too_much_marbles or wrong_sumito:
-                valid_move = False # Impossible move
-                break
+                self.colors_2_change[(buffer_target_x, buffer_target_y)] = MARBLE_RED
+                return False
             # If we keep finding our own marbles
             if own_marble and (target_x, target_y) not in self.marbles_2_change.keys():
                 self.marbles_2_change[(target_x, target_y)] = self.current_color
@@ -201,10 +200,7 @@ class Game(pygame.sprite.Sprite):
             origin_center = target_center
             origin_x, origin_y = self.normalize_coordinates(origin_center)
             target_x, target_y = self.normalize_coordinates(next_spot)
-            
-        if not valid_move:
-            self.colors_2_change[(buffer_target_x, buffer_target_y)] = MARBLE_RED
-        return valid_move
+        return True
     
     def move_multiple_marbles(self, mouse_position):
         """TODO.
@@ -290,6 +286,18 @@ class Game(pygame.sprite.Sprite):
                 x, y = pos
                 self.data[x][y] = value
         self.clear_buffers()
+        
+    def reset_game(self, configuration=STANDARD):
+        """TODO
+
+        Parameter
+        ---------
+        screen: pygame.Surface (required)
+            Game 
+        """
+        self.data = deepcopy(configuration)
+        self.clear_buffers()
+        self.dead_marbles.clear()
 
     def clear_buffers(self):
         """TODO.
@@ -364,7 +372,6 @@ class Game(pygame.sprite.Sprite):
         extension = "png"
         file_name = f"snapshot_{n_snap}.{extension}"
         pygame.image.save(screen, os.path.join(SNAP_FOLDER, file_name))
-        
         
     @staticmethod
     def compute_distance_marbles(p1, p2):

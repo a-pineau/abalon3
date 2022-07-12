@@ -83,9 +83,9 @@ SKULL = pygame.image.load(
 ).convert_alpha()
 SKULL = pygame.transform.rotozoom(SKULL, 0, 0.7)  # Adjusting size
 
-SIZE_X = 820
+SIZE_X = 1000
 FIRST_TOP_LEFT_X = SIZE_X // 2 - 2.5 * MARBLE_SIZE # Centering board inside game window
-FIRST_TOP_LEFT_Y = 75
+FIRST_TOP_LEFT_Y = 125
 SIZE_Y = 2 * FIRST_TOP_LEFT_Y + 9 * MARBLE_SIZE
 MARBLE_IMGS = {
     -2: MARBLE_PURPLE,
@@ -105,16 +105,17 @@ MARBLE_DEBUG = {
 
 # Messages
 CONFIRM_MOVE = "Hit the spacebar to confirm your move"
+WRONG_MOVE = "Impossible move"
 
 # Initial configurations
 STANDARD = [
-    [3, 2, 2, 2, 2],
+    [2, 2, 2, 2, 2],
     [2, 2, 2, 2, 2, 2],
-    [1, 1, 2, 2, 2, 2, 1],
-    [1, 2, 2, 3, 2, 1, 1, 1],
-    [3, 3, 2, 3, 1, 1, 1, 1, 1],
-    [3, 3, 1, 1, 1, 1, 1, 1],
-    [3, 1, 3, 3, 3, 1, 1],
+    [1, 1, 2, 2, 2, 1, 1],
+    [1, 1, 1, 1, 1, 1, 1, 1],
+    [1, 1, 1, 1, 1, 1, 1, 1, 1],
+    [1, 1, 1, 1, 1, 1, 1, 1],
+    [1, 1, 3, 3, 3, 1, 1],
     [3, 3, 3, 3, 3, 3],
     [3, 3, 3, 3, 3],
 ]
