@@ -9,87 +9,94 @@ os.environ['SDL_VIDEO_WINDOW_POS'] = "%d,%d" % (100, 100)
 sys.path.insert(0, abspath(join(dirname(__file__), "src")))
 
 import math
-import pygame
+import pygame as pg
+import constants as const
 from game import Game
 from display_features import *
 from popup_win_game import PopUpWindow
-from constants import *
 from PyQt5.QtWidgets import (QMainWindow, QApplication, QGridLayout, QWidget, QLayout)
 SNAP_FOLDER = os.path.join(os.path.dirname(__file__), "results")
 n_snap = 0
 
 # Game loop
 def main():
-    pygame.init()
-    screen = pygame.display.set_mode([SIZE_X, SIZE_Y])
-    pygame.display.set_caption("aBOT_Lone")
+    pg.init()
+    screen = pg.display.set_mode([const.WIDTH, const.HEIGHT])
+    pg.display.set_caption("aBOT_Lone")
     game = Game()
     running = True
     moving = False
     valid_move = False
     single = False
     multiple = False
-    yy = 0
-    crash_test = MARBLE_PURPLE.get_rect(topleft = (400, yy))
 
     while running:
         # Events handling
-        for event in pygame.event.get():
-            p_keys = pygame.key.get_pressed()
-            p_mouse = pygame.mouse.get_pressed()
+        for event in pg.event.get():
+            p_keys = pg.key.get_pressed()
+            p_mouse = pg.mouse.get_pressed()
             # Quiting game
-            if event.type == QUIT:
+            if event.type == pg.QUIT:
                 running = False
-            elif event.type == KEYDOWN:
+            elif event.type == pg.KEYDOWN:
                  # Quiting (w/ escape)/Resetting game
-                if event.key == K_ESCAPE:
+                if event.key == pg.K_ESCAPE:
                     running = False
                 # Confirming move
-                elif event.key == K_SPACE:
+                elif event.key == pg.K_SPACE:
                     moving = False
                     single = False
                     game.update_game(valid_move)
                 # Resetting game
-                elif event.key == K_r:
-                    print("LOO")
+                elif event.key == pg.K_r:
                     game.reset_game()
             # Selecting a single marble
-            elif event.type == MOUSEBUTTONDOWN and not p_keys[K_LSHIFT]:
+            elif event.type == pg.MOUSEBUTTONDOWN and not p_keys[pg.K_LSHIFT]:
                 single = True
-                origin_x, origin_y = game.normalize_coordinates(event.pos)
-                move_data = game.check_pick_validity(origin_x, origin_y)
-                if not move_data["valid"]:
+                pick = game.normalize_coordinates(event.pos)
+                # Checking pick validity (i.e. out of board or free marble picked is invalid)
+                try:
+                    game.rect_marbles[pick]
+                except KeyError:
+                    print("Pick out of bounds!")
                     continue
-                else:
+                else: # Move is valid, getting marble's data
                     moving = True
                     valid_move = False
-                    origin = move_data["origin_marble"]
-                    origin_center = move_data["origin_center"]
-                    origin_value = move_data["origin_value"]
-                    print("ORIGIN CENTER", origin_center)
+                    pick_x, pick_y = pick
+                    pick_value = game.data[pick_x][pick_y]
+                    pick_marble = game.rect_marbles[(pick_x, pick_y)]
+                    pick_center = pick_marble.center
+                    if pick_value == 1: 
+                        moving = False
             # Updating board
-            elif event.type == MOUSEBUTTONUP:
+            elif event.type == pg.MOUSEBUTTONUP:
                 moving = False
                 single = False
                 game.clear_buffers()
             # Moving single marble
-            elif event.type == MOUSEMOTION and moving:
-                origin.move_ip(event.rel)
-                target_x, target_y = game.normalize_coordinates(event.pos)
-                if game.exception_digger(target_x, target_y, game.rect_marbles, KeyError):
-                    continue
+            elif event.type == pg.MOUSEMOTION and moving:
+                pick_marble.move_ip(event.rel)
+                target = game.normalize_coordinates(event.pos)
+                try:
+                    target_x, target_y = target
+                except TypeError:
+                    print('Target out of bounds!')
+                    continue # User's target is invalid (out of bounds)
+                # Valid target otherwise
+                target_x, target_y = target
                 target_center = game.rect_marbles[(target_x, target_y)].center
-                d = game.compute_distance_marbles(origin_center,  target_center)
-                if d <= MAX_DISTANCE_MARBLE and target_center != origin_center:
+                d = game.compute_distance(pick_center, target_center)
+                # the target must be in the pick neighborhood and cannot be the pick itself
+                if d <= const.MAX_DISTANCE_MARBLE and target_center != pick_center:
                     valid_move = game.move_single_marble(
-                        origin_x, origin_y, origin_center, 
+                        pick_x, pick_y, pick_center, 
                         target_x, target_y, target_center
                     )
             # Moving multiple marbles
-            elif p_keys[K_LSHIFT]:
+            elif p_keys[pg.K_LSHIFT]:
                 if p_mouse[0]:
-                    valid_move = game.move_multiple_marbles(pygame.mouse.get_pos())
-                
+                    valid_move = game.move_multiple_marbles(pg.mouse.get_pos())
         # Overall display
         game.display_marbles(screen)
         # :)))))))))))))
@@ -97,29 +104,40 @@ def main():
             marble = game.rect_marbles[coords]
             screen.blit(new_color, marble)
         if moving: 
-            origin_marble = game.rect_marbles[(origin_x, origin_y)]
-            screen.blit(MARBLE_FREE, origin_marble)
-            screen.blit(MARBLE_IMGS[origin_value], origin)
+            origin_marble = game.rect_marbles[(pick_x, pick_y)]
+            screen.blit(const.MARBLE_FREE, origin_marble)
+            screen.blit(const.MARBLE_IMGS[pick_value], pick_marble)
         # Drawing a line to indicate which push move is being done
         if valid_move and game.marbles_2_change:
-            display_message(screen, CONFIRM_MOVE, 30, (SIZE_X / 2, FIRST_TOP_LEFT_Y / 2), GREEN3)
+            display_message(
+                screen, 
+                const.CONFIRM_MOVE, 30, 
+                (const.WIDTH*0.5, const.FIRST_TOP_LEFT_Y*0.5), 
+                const.GREEN3
+            )
             if single:
                 end_x, end_y = list(game.marbles_2_change.keys())[-1]
                 end_marble = game.rect_marbles[(end_x, end_y)]
                 for coords, value in game.marbles_2_change.items():
                     if value > 1: 
                         marble = game.rect_marbles[coords]
-                        screen.blit(MARBLE_IMGS[value], marble)
-                draw_circled_line(origin_center, end_marble.center, screen, GREEN3, 3)
+                        screen.blit(const.MARBLE_IMGS[value], marble)
+                draw_circled_line(pick_center, end_marble.center, screen, const.GREEN3, 3)
             elif multiple:
                 for coords, new_color in game.colors_2_change.items():
                     marble = game.rect_marbles[coords]
                     screen.blit(new_color, marble)
         elif not valid_move and game.colors_2_change:
-            display_message(screen, WRONG_MOVE, 30, (SIZE_X / 2, FIRST_TOP_LEFT_Y / 2), RED2)
+            display_message(
+                screen, 
+                const.WRONG_MOVE, 
+                30, 
+                (const.WIDTH*0.5, const.FIRST_TOP_LEFT_Y*0.5), 
+                const.RED2
+            )
         # Updating screen
-        pygame.display.update()
-    pygame.quit()
+        pg.display.update()
+    pg.quit()
     
 
 if __name__ == "__main__":

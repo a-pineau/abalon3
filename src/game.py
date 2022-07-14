@@ -69,7 +69,7 @@ class Game(pygame.sprite.Sprite):
             for i_col in range(len(row)):
                 # The value 5 corresponds to the number of marbles in the first row
                 # The board's position is defined w/ respect to the top-left marble (first marble of top-row)
-                x = FIRST_TOP_LEFT_X - MARBLE_SIZE * (0.5 * (len(self.data[i_row]) - 5) - i_col)
+                x = FIRST_TOP_LEFT_X - MARBLE_SIZE * (0.5*(len(self.data[i_row])-5) - i_col)
                 y = FIRST_TOP_LEFT_Y + MARBLE_SIZE * i_row
                 self.rect_coordinates.append((x, y))
 
@@ -89,12 +89,12 @@ class Game(pygame.sprite.Sprite):
                 x, y = next(iter_rect_coordinates)
                 screen.blit(MARBLE_IMGS[value], (x, y))
                 self.rect_marbles[(i_row, i_col)] = MARBLE_IMGS[value].get_rect(topleft = (x, y))
-                # pygame.draw.rect(screen, RED2, pygame.Rect(x, y, 72, 72), 1) # Debug
+
         for buffer_marble, buffer_color in self.buffer_dead_marble.items():
             screen.blit(buffer_color, buffer_marble)
             screen.blit(SKULL, (buffer_marble[0] + MARBLE_SIZE / 5, buffer_marble[1] + MARBLE_SIZE / 5))
 
-    def normalize_coordinates(self, position) -> tuple:
+    def normalize_coordinates(self, position):
         """TODO
 
         Parameter
@@ -102,35 +102,15 @@ class Game(pygame.sprite.Sprite):
         screen: pygame.Surface (required)
             Game window
         """
-        
         x, y = position
-        r = (y - FIRST_TOP_LEFT_Y) // MARBLE_SIZE
-        if r in range(0, 9):
-            c = (x - (FIRST_TOP_LEFT_X - 0.5 * (len(self.data[r]) - 5) * MARBLE_SIZE)) // MARBLE_SIZE
-            if int(c) in range(0, 9):
+        # Getting row index
+        r = (y-FIRST_TOP_LEFT_Y) // MARBLE_SIZE 
+        if 0 <= r < 9: # Abalone board game has 9 rows
+            len_row = len(self.data[r])
+            c = (x - (FIRST_TOP_LEFT_X - 0.5*(len(self.data[r])-5) * MARBLE_SIZE)) // MARBLE_SIZE
+            if 0 <= int(c) in range(0, len_row):
                 return r, int(c)
-        return None, None
-    
-    def check_pick_validity(self, origin_x, origin_y) -> dict:
-        """TODO.
-
-        Parameter
-        ---------
-        screen: pygame.Surface (required)
-            Game window
-        """
-        move_data = {
-            "valid": False, 
-            "origin_value": None,
-            "origin_marble": None,
-            "origin_center": None,
-        }
-        if not self.exception_digger(origin_x, origin_y, self.data, IndexError):
-            move_data["origin_value"] = self.data[origin_x][origin_y]
-            move_data["valid"] = True
-            move_data["origin_marble"] = self.rect_marbles[(origin_x, origin_y)]
-            move_data["origin_center"] = move_data["origin_marble"].center
-        return move_data       
+        return False
     
     def move_single_marble(self, origin_x, origin_y, origin_center, 
                            target_x, target_y, target_center) -> bool:
@@ -142,39 +122,29 @@ class Game(pygame.sprite.Sprite):
             Game window
         """
         self.clear_buffers()
-        self.marbles_2_change[(origin_x, origin_y)] = 1
+        self.marbles_2_change[(origin_x, origin_y)] = 1 # If the move is valid, the picked marble will become free
+        target_value = self.data[target_x][target_y]
         buffer_target_x, buffer_target_y = target_x, target_y
         enemy = self.enemy()
         colors_seen = [self.current_color] # To keep track of the colors we meet
         sumito = False        
         end_move = False
         
-        while not end_move:
-            # Checking if we are killing a marble (out of bounds)
-            try:
-                self.rect_marbles[(target_x, target_y)].center
-            except KeyError:
-                dead_x = next_spot[0] - MARBLE_SIZE // 2
-                dead_y = next_spot[1] - MARBLE_SIZE // 2
-                if self.buffer_dead_marble:
-                    self.buffer_dead_marble.clear()
-                self.buffer_dead_marble[(dead_x, dead_y)] = DEAD_YELLOW
-                return True
-            else:
-                target_center = self.rect_marbles[(target_x, target_y)].center
-                target_value = self.data[target_x][target_y]
-                
+        while not end_move:                
             if target_value in (enemy, self.current_color):
                 colors_seen.append(target_value)
             own_marble = target_value == self.current_color
             other_marble = target_value in (enemy, 1)
+            # A potential sumito occurs when the enemy color is met
+            sumito = enemy in colors_seen
             # Cannot push more than 3 marbles
             too_much_marbles = colors_seen.count(self.current_color) > 3
-            sumito = enemy in colors_seen
-            wrong_sumito = (colors_seen.count(enemy) >= colors_seen.count(self.current_color)
+            # The sumito is invalid if there are more enemies than the current color...
+            # ... or if the current color is met after the enemy
+            invalid_sumito = (colors_seen.count(enemy) >= colors_seen.count(self.current_color)
                             or enemy in colors_seen and target_value == self.current_color)
-            if too_much_marbles or wrong_sumito:
-                self.colors_2_change[(buffer_target_x, buffer_target_y)] = MARBLE_RED
+            if too_much_marbles or invalid_sumito:
+                self.colors_2_change[(buffer_target_x, buffer_target_y)] = MARBLE_RED # Invalid move
                 return False
             # If we keep finding our own marbles
             if own_marble and (target_x, target_y) not in self.marbles_2_change.keys():
@@ -190,16 +160,27 @@ class Game(pygame.sprite.Sprite):
                     self.marbles_2_change[(target_x, target_y)] = self.current_color
                 # Loop ends if a free spot is reached
                 if target_value == 1:
-                    valid_move = True
                     end_move = True
             # Getting the next spot
-            v_x = (target_center[0] - origin_center[0]) / MARBLE_SIZE
-            v_y = (target_center[1] - origin_center[1]) / MARBLE_SIZE
-            next_spot = self.compute_next_spot(target_center, v_x, v_y)
+            nx = (target_center[0] - origin_center[0]) / MARBLE_SIZE
+            ny = (target_center[1] - origin_center[1]) / MARBLE_SIZE
+            next_spot = self.compute_next_spot(target_center, nx, ny)
             # Updating origin/target positions
             origin_center = target_center
             origin_x, origin_y = self.normalize_coordinates(origin_center)
-            target_x, target_y = self.normalize_coordinates(next_spot)
+            # Checking if a marble is being pushed out
+            try:
+                target_x, target_y = self.normalize_coordinates(next_spot)
+            except TypeError: # If the next spot cannot be normalized, then we're killing a marble
+                print("Pushing one marble out!")
+                dead_x = next_spot[0] - MARBLE_SIZE//2
+                dead_y = next_spot[1] - MARBLE_SIZE//2
+                if self.buffer_dead_marble: self.buffer_dead_marble.clear()
+                self.buffer_dead_marble[(dead_x, dead_y)] = DEAD_YELLOW
+                return True
+            else:
+                target_center = self.rect_marbles[(target_x, target_y)].center
+                target_value = self.data[target_x][target_y]
         return True
     
     def move_multiple_marbles(self, mouse_position):
@@ -216,32 +197,33 @@ class Game(pygame.sprite.Sprite):
         elif MARBLE_RED in self.colors_2_change.values():
             return False 
         
-        norm_x, norm_y = self.normalize_coordinates(mouse_position)
+        pick = self.normalize_coordinates(mouse_position)
         # Incorrect selection
-        if self.exception_digger(norm_x, norm_y, self.data, IndexError):
+        if not pick:
             return False
-        local_value = self.data[norm_x][norm_y]
-        if local_value == self.current_color:
-            self.marbles_2_change[(norm_x, norm_y)] = 1
+        pick_x, pick_y = pick
+        value = self.data[pick_x][pick_y]
+        if value == self.current_color:
+            self.marbles_2_change[(pick_x, pick_y)] = 1
         coordinates = [self.rect_marbles[(x, y)].center 
                        for x, y in self.marbles_2_change.keys()
                        if self.marbles_2_change[(x, y)] == 1]
         # Checking first self marbles range validity
-        if local_value == self.current_color:
+        if value == self.current_color:
             if self.check_range_validity(coordinates):
-                self.colors_2_change[(norm_x, norm_y)] = MARBLE_PURPLE 
+                self.colors_2_change[(pick_x, pick_y)] = MARBLE_PURPLE 
             else:
-                self.marbles_2_change.pop((norm_x, norm_y))
+                self.marbles_2_change.pop((pick_x, pick_y))
                 return False
         
         # Computing the new marbles positions
         range_length = len(coordinates)
-        if local_value != self.current_color and coordinates and range_length in (2, 3):
-            target_x, target_y = self.rect_marbles[(norm_x, norm_y)].center
+        if value != self.current_color and coordinates and range_length in (2, 3):
+            target_x, target_y = self.rect_marbles[(pick_x, pick_y)].center
             origin_x, origin_y = coordinates[-1][0], coordinates[-1][1]
-            v_x = (target_x - origin_x) / MARBLE_SIZE
-            v_y = (target_y - origin_y) / MARBLE_SIZE
-            new_coords = [self.compute_next_spot(c, v_x, v_y) for c in coordinates]
+            nx = (target_x - origin_x) / MARBLE_SIZE
+            ny = (target_y - origin_y) / MARBLE_SIZE
+            new_coords = [self.compute_next_spot(c, nx, ny) for c in coordinates]
             new_coords = [self.normalize_coordinates((x, y)) for x, y in new_coords]
             # Checking if the new range is valid (out of bounds marble or occupied spot in range)
             if (any(self.exception_digger(x, y, self.data, IndexError) for x, y in new_coords) 
@@ -313,7 +295,7 @@ class Game(pygame.sprite.Sprite):
         self.buffer_dead_marble.clear()
         
     @staticmethod
-    def exception_digger(x, y, data, exception_type) -> bool:
+    def exception_digger(pick, data, exception_type) -> bool:
         """TODO
 
         Parameter
@@ -321,6 +303,7 @@ class Game(pygame.sprite.Sprite):
         screen: pygame.Surface (required)
             Game window
         """
+        x, y = pick
         if (x, y) != (None, None):
             try:
                 data[x][y] if exception_type == IndexError else data[(x, y)]
@@ -374,14 +357,8 @@ class Game(pygame.sprite.Sprite):
         pygame.image.save(screen, os.path.join(SNAP_FOLDER, file_name))
         
     @staticmethod
-    def compute_distance_marbles(p1, p2):
-        """TODO
-
-        Parameter
-        ---------
-        screen: pygame.Surface (required)
-            Game window
-        """
+    def compute_distance(p1, p2):
+        """Compute the distance between two points (p1, p2)."""
         return math.sqrt((p2[0] - p1[0])**2 + (p2[1] - p1[1])**2)
 
 

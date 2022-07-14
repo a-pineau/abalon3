@@ -74,7 +74,6 @@ MARBLE_FREE = pygame.image.load(
 
 MARBLE_RED.get_rect().inflate_ip(2, 2)
 MARBLE_SIZE = MARBLE_RED.get_rect().size[0] # All marbles have the same size
-print(MARBLE_SIZE)
 MAX_DISTANCE_MARBLE = MARBLE_SIZE * sqrt(1.25) # Max distance between two neighbouring marbles (diagonal)
 
 # https://icons8.com/icon/54885/skull
@@ -83,10 +82,11 @@ SKULL = pygame.image.load(
 ).convert_alpha()
 SKULL = pygame.transform.rotozoom(SKULL, 0, 0.7)  # Adjusting size
 
-SIZE_X = 1000
-FIRST_TOP_LEFT_X = SIZE_X // 2 - 2.5 * MARBLE_SIZE # Centering board inside game window
+WIDTH = 1000
+FIRST_TOP_LEFT_X = WIDTH // 2 - 2.5 * MARBLE_SIZE # Centering board inside game window
 FIRST_TOP_LEFT_Y = 125
-SIZE_Y = 2 * FIRST_TOP_LEFT_Y + 9 * MARBLE_SIZE
+HEIGHT = 2 * FIRST_TOP_LEFT_Y + 9 * MARBLE_SIZE
+# Keys are arbitrary chosen
 MARBLE_IMGS = {
     -2: MARBLE_PURPLE,
     -3: DEAD_YELLOW,
