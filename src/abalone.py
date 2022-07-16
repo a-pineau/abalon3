@@ -268,14 +268,11 @@ class Abalone(pygame.sprite.Sprite):
             Game window
         """
         if len(centers) == 3:
-            p1 = centers[0]
-            p2 = centers[1]
-            p3 = centers[2]
+            p1, p2, p3 = centers[0], centers[1], centers[2]
             d_first_to_second = self.compute_distance(p1, p2)
             d_second_to_third = self.compute_distance(p2, p3)
             if d_second_to_third != d_first_to_second:
-                print("negre", centers)
-                return False # A misaligned marble results in a invalid range
+                return False # A misaligned marble results in an invalid range
         elif len(centers) > 3:
             return False # A range of more than 3 marbles is invalid
         return True 
