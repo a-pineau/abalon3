@@ -1,8 +1,6 @@
 import math
-import random
-import pygame
+import pygame as pg
 
-from pygame import gfxdraw
 from pygame.locals import *
 from constants import *
 from copy import deepcopy
@@ -54,9 +52,9 @@ class Abalone(pygame.sprite.Sprite):
         self.marbles_2_change = {}
         self.buffer_dead_marble = {}
         self.dead_marbles = {}
-        self.compute_rect_coordinates()
+        self.get_rect_coordinates()
         
-    def compute_rect_coordinates(self):   
+    def get_rect_coordinates(self):   
         """TODO
 
         Parameter
@@ -70,7 +68,7 @@ class Abalone(pygame.sprite.Sprite):
                 y = FIRST_Y + MARBLE_SIZE * i_row
                 self.rect_coordinates.append((x, y))
 
-    def display_marbles(self, screen) -> None:
+    def display(self, screen, valid_move) -> None:
         """TODO
 
         Parameter
@@ -81,20 +79,36 @@ class Abalone(pygame.sprite.Sprite):
         
         screen.fill(BACKGROUND)
         iter_rect_coordinates = iter(self.rect_coordinates)
-        # Displaying the board
+        # Displays the board
         for i_row, row in enumerate(self.data):
             for i_col, value in enumerate(row):
                 x, y = next(iter_rect_coordinates)
                 screen.blit(MARBLE_IMGS[value], (x, y))
                 self.rect_marbles[(i_row, i_col)] = MARBLE_IMGS[value].get_rect(topleft = (x, y))
-        # Displaying the current dead marble (if any)
+        # Displays marbles with changing colors
+        for coords, new_color in self.colors_2_change.items():
+            if not valid_move:
+                self.message(screen, *WRONG_MOVE)
+            marble = self.rect_marbles[coords]
+            screen.blit(new_color, marble)
+        # Displays the current dead marble (if any)
         for buffer_marble, buffer_color in self.buffer_dead_marble.items():
             screen.blit(buffer_color, buffer_marble)
             skull_x = buffer_marble[0] + MARBLE_SIZE/5
             skull_y = buffer_marble[1] + MARBLE_SIZE/5
             screen.blit(SKULL, (skull_x, skull_y))
-        # Displaying the deadzone
+        # Displays the deadzone
         # TODO
+        
+    def message(screen, msg, font_size, color, position):
+        """
+        TODO
+        """ 
+        font = pg.font.SysFont("Calibri", font_size)
+        text = font.render(msg, True, color)
+        text_rect = text.get_rect()
+        text_rect.centerx, text_rect.top = position
+        screen.blit(text, text_rect)
 
     # Not used (so far)
     def get_marble_coordinates(self, index) -> tuple:
@@ -206,7 +220,7 @@ class Abalone(pygame.sprite.Sprite):
             # Getting the next spot
             nx = (target_center[0]-origin_center[0]) / MARBLE_SIZE
             ny = (target_center[1]-origin_center[1]) / MARBLE_SIZE
-            next_spot = self.compute_next_spot(target_center, nx, ny)
+            next_spot = self.next_spot(target_center, nx, ny)
             # Updating origin/target positions
             origin_center = target_center
             origin = self.normalize_coordinates(origin_center)
@@ -247,7 +261,7 @@ class Abalone(pygame.sprite.Sprite):
         origin = centers[-1][0], centers[-1][1]
         nx = (target[0] - origin[0]) / MARBLE_SIZE
         ny = (target[1] - origin[1]) / MARBLE_SIZE
-        new_coords = [self.compute_next_spot(c, nx, ny) for c in centers]
+        new_coords = [self.next_spot(c, nx, ny) for c in centers]
         new_coords = [self.normalize_coordinates(c) for c in new_coords]
         if any(self.get_value(c) != 1 for c in new_coords):
             if MARBLE_RED not in self.colors_2_change.values():
@@ -317,7 +331,7 @@ class Abalone(pygame.sprite.Sprite):
         self.buffer_dead_marble.clear()
         
     @staticmethod
-    def compute_next_spot(origin, nx, ny):
+    def next_spot(origin, nx, ny):
         """Compute the next spot of given marble coordinates.
 
         Parameters

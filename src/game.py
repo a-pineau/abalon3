@@ -5,10 +5,9 @@ import os
 
 from os.path import join, dirname, abspath
 # Manually places the window
-os.environ['SDL_VIDEO_WINDOW_POS'] = "%d,%d" % (0, 0)
+os.environ['SDL_VIDEO_WINDOW_POS'] = "%d,%d" % (100, 100)
 sys.path.insert(0, abspath(join(dirname(__file__), "src")))
 
-import math
 import pygame as pg
 import constants as const
 from abalone import Abalone
@@ -96,19 +95,15 @@ def main():
                 if value != board.current_color and len(centers) in (2, 3):
                     valid_move = board.new_range(pick, centers)
         # Overall display
-        board.display_marbles(screen)
+        board.display(screen, valid_move)
         # :)))))))))))))
-        for coords, new_color in board.colors_2_change.items():
-            marble = board.rect_marbles[coords]
-            screen.blit(new_color, marble)
         if moving: 
             origin_marble = board.rect_marbles[pick]
             screen.blit(const.MARBLE_FREE, origin_marble)
             screen.blit(const.MARBLE_IMGS[pick_value], pick_marble)
         # Drawing a line to indicate which push move is being done
-        msg, color = "", None
         if valid_move and board.marbles_2_change:
-            msg, color = const.CONFIRM_MOVE, const.GREEN3
+            pass
             if single:
                 last_entry = list(board.marbles_2_change.keys())[-1]
                 last_marble = board.rect_marbles[last_entry]
@@ -122,14 +117,11 @@ def main():
                     marble = board.rect_marbles[coords]
                     screen.blit(new_color, marble)
         elif not valid_move and board.colors_2_change:
-            msg, color = const.WRONG_MOVE, const.RED2
-        if msg:
-            pos = (const.WIDTH*0.5, const.FIRST_Y*0.5)
-            display_message(screen, msg, 30, pos, color)
+           pass
         # Updating screen
         pg.display.update()
     pg.quit()
-    
+
 
 if __name__ == "__main__":
     main()

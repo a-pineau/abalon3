@@ -40,41 +40,35 @@ ARROW_COLOR = (255, 0, 247)
 # Images
 # https://www.iconshock.com/flat-icons/3d-graphics-icons/sphere-icon/
 MARBLE_RED = pygame.image.load(
-    os.path.join(IMAGES_DIR, "sphere_red.png")
+    os.path.join(IMAGES_DIR, "marble_red.png")
     ).convert_alpha()
 MARBLE_GREEN = pygame.image.load(
-    os.path.join(IMAGES_DIR, "sphere_green.png")
+    os.path.join(IMAGES_DIR, "marble_green.png")
+    ).convert_alpha()
+MARBLE_PURPLE = pygame.image.load(
+    os.path.join(IMAGES_DIR, "marble_purple.png")
     ).convert_alpha()
 MARBLE_BLUE = pygame.image.load(
-    os.path.join(IMAGES_DIR, "sphere_blue.png")
+    os.path.join(IMAGES_DIR, "marble_blue.png")
     ).convert_alpha()
 DEAD_BLUE = pygame.image.load(
-    os.path.join(IMAGES_DIR, "sphere_blue.png")
+    os.path.join(IMAGES_DIR, "marble_blue.png")
     ).convert_alpha()
 DEAD_BLUE.set_alpha(128)
 MARBLE_YELLOW = pygame.image.load(
-    os.path.join(IMAGES_DIR, "sphere_yellow.png")
+    os.path.join(IMAGES_DIR, "marble_yellow.png")
     ).convert_alpha()
 DEAD_YELLOW = pygame.image.load(
-    os.path.join(IMAGES_DIR, "sphere_yellow.png")
+    os.path.join(IMAGES_DIR, "marble_yellow.png")
     ).convert_alpha()
 DEAD_YELLOW.set_alpha(128)
-MARBLE_PURPLE = pygame.image.load(
-    os.path.join(IMAGES_DIR, "sphere_purple.png")
-    ).convert_alpha()
-MARBLE_CYAN = pygame.image.load(
-    os.path.join(IMAGES_DIR, "sphere_cyan.png")
-    ).convert_alpha()
-MARBLE_BROWN = pygame.image.load(
-    os.path.join(IMAGES_DIR, "sphere_brown.png")
-    ).convert_alpha()
 MARBLE_FREE = pygame.image.load(
-    os.path.join(IMAGES_DIR, "sphere_empty.png")
+    os.path.join(IMAGES_DIR, "marble_empty.png")
     ).convert_alpha()
 
 MARBLE_RED.get_rect().inflate_ip(2, 2)
 MARBLE_SIZE = MARBLE_RED.get_rect().size[0] # All marbles have the same size
-MAX_DISTANCE_MARBLE = MARBLE_SIZE * sqrt(1.25) # Max distance between two neighbouring marbles (diagonal)
+MAX_DISTANCE_MARBLE = MARBLE_SIZE*sqrt(1.25) # Max distance between two neighbouring marbles (diagonal)
 
 # https://icons8.com/icon/54885/skull
 SKULL = pygame.image.load(
@@ -82,7 +76,7 @@ SKULL = pygame.image.load(
 ).convert_alpha()
 SKULL = pygame.transform.rotozoom(SKULL, 0, 0.7)  # Adjusting size
 
-# Window's size
+# Window size
 WIDTH = 900
 FIRST_X = WIDTH*0.5 - MARBLE_SIZE*2.5 # Centering board inside game window
 FIRST_Y = 60 # Defines window's height
@@ -99,9 +93,30 @@ MARBLE_IMGS = {
     5: MARBLE_RED,
 }
 
-# Messages
-CONFIRM_MOVE = "Hit the spacebar to confirm your move"
-WRONG_MOVE = "Wrong move!"
+# MESSAGES
+# Confirm move
+CONFIRM_MOVE_MSG = "Hit the spacebar to confirm your move"
+CONFIRM_MOVE_FONT_SIZE = 30
+CONFIRM_MOVE_COLOR = GREEN2
+CONFIRM_MOVE_POSITION = WIDTH*0.5, FIRST_Y*0.4
+CONFIRM_MOVE = [
+    CONFIRM_MOVE_MSG,
+    CONFIRM_MOVE_FONT_SIZE,
+    CONFIRM_MOVE_COLOR,
+    CONFIRM_MOVE_POSITION
+]
+
+# Wrong move
+WRONG_MOVE_MSG = "Wrong move!"
+WRONG_MOVE_FONT_SIZE = 30
+WRONG_MOVE_COLOR = RED
+WRONG_MOVE_POSITION = WIDTH*0.5, FIRST_Y*0.4
+WRONG_MOVE = [
+    WRONG_MOVE_MSG,
+    WRONG_MOVE_FONT_SIZE,
+    WRONG_MOVE_COLOR,
+    WRONG_MOVE_POSITION
+]
 
 # Initial configurations
 STANDARD = [
