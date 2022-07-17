@@ -1,6 +1,7 @@
 import math
 import pygame as pg
 
+from display_features import *
 from pygame.locals import *
 from constants import *
 from copy import deepcopy
@@ -68,7 +69,7 @@ class Abalone(pygame.sprite.Sprite):
                 y = FIRST_Y + MARBLE_SIZE * i_row
                 self.rect_coordinates.append((x, y))
 
-    def display(self, screen, valid_move) -> None:
+    def display(self, screen, valid_move, path=True) -> None:
         """TODO
 
         Parameter
@@ -87,8 +88,6 @@ class Abalone(pygame.sprite.Sprite):
                 self.rect_marbles[(i_row, i_col)] = MARBLE_IMGS[value].get_rect(topleft = (x, y))
         # Displays marbles with changing colors
         for coords, new_color in self.colors_2_change.items():
-            if not valid_move:
-                self.message(screen, *WRONG_MOVE)
             marble = self.rect_marbles[coords]
             screen.blit(new_color, marble)
         # Displays the current dead marble (if any)
@@ -97,9 +96,24 @@ class Abalone(pygame.sprite.Sprite):
             skull_x = buffer_marble[0] + MARBLE_SIZE/5
             skull_y = buffer_marble[1] + MARBLE_SIZE/5
             screen.blit(SKULL, (skull_x, skull_y))
+        # Displays a message (confirm/wrong move)
+        if valid_move and self.marbles_2_change:
+            self.message(screen, *CONFIRM_MOVE)
+            if path:
+                first_entry = list(self.marbles_2_change.keys())[0]
+                if self.buffer_dead_marble:
+                    last_entry = list(self.buffer_dead_marble.keys())[0]
+                else:
+                    last_entry = list(self.marbles_2_change.keys())[-1]
+                first_marble = self.rect_marbles[first_entry].center
+                last_marble = self.rect_marbles[last_entry].center
+                draw_path(first_marble, last_marble, screen, GREEN3, 3)
+        elif not valid_move and self.colors_2_change:
+            self.message(screen, *WRONG_MOVE)
         # Displays the deadzone
         # TODO
-        
+    
+    @staticmethod
     def message(screen, msg, font_size, color, position):
         """
         TODO
@@ -109,7 +123,7 @@ class Abalone(pygame.sprite.Sprite):
         text_rect = text.get_rect()
         text_rect.centerx, text_rect.top = position
         screen.blit(text, text_rect)
-
+    
     # Not used (so far)
     def get_marble_coordinates(self, index) -> tuple:
         r, c = index
@@ -122,10 +136,10 @@ class Abalone(pygame.sprite.Sprite):
         """
         TODO
         """
-        if not topleft:
-            m_x, m_y = self.get_marble_coordinates(index)
-        else:
+        if topleft is not None:
             m_x, m_y = topleft
+        else:
+            m_x, m_y = self.get_marble_coordinates(index)
         c_x = int(m_x + MARBLE_SIZE*0.5)
         c_y = int(m_y + MARBLE_SIZE*0.5)
         return c_x, c_y
@@ -263,13 +277,15 @@ class Abalone(pygame.sprite.Sprite):
         ny = (target[1] - origin[1]) / MARBLE_SIZE
         new_coords = [self.next_spot(c, nx, ny) for c in centers]
         new_coords = [self.normalize_coordinates(c) for c in new_coords]
+        # Checking if the new range contains occupied spots
         if any(self.get_value(c) != 1 for c in new_coords):
             if MARBLE_RED not in self.colors_2_change.values():
                 self.colors_2_change[new_coords[-1]] = MARBLE_RED
                 self.marbles_2_change.clear()
                 return False
+        # Valid move otherwise
         for coords in new_coords:
-            self.colors_2_change[coords] = MARBLE_GREEN # Move OK
+            self.colors_2_change[coords] = MARBLE_GREEN 
             self.marbles_2_change[coords] = self.current_color
         return True
 
@@ -283,12 +299,14 @@ class Abalone(pygame.sprite.Sprite):
         """
         if len(centers) == 3:
             p1, p2, p3 = centers[0], centers[1], centers[2]
-            d_first_to_second = self.compute_distance(p1, p2)
-            d_second_to_third = self.compute_distance(p2, p3)
-            if d_second_to_third != d_first_to_second:
-                return False # A misaligned marble results in an invalid range
+            d_p1_to_p2 = self.distance(p1, p2)
+            d_p2_to_p3 = self.distance(p2, p3)
+            # A misaligned marble results in an invalid range
+            if d_p2_to_p3 != d_p1_to_p2:
+                return False
+        # A range of more than 3 marbles is invalid 
         elif len(centers) > 3:
-            return False # A range of more than 3 marbles is invalid
+            return False 
         return True 
     
     def update(self, valid_move):
@@ -305,7 +323,7 @@ class Abalone(pygame.sprite.Sprite):
                 self.data[x][y] = value
         self.clear_buffers()
         
-    def reset_board(self, configuration=STANDARD):
+    def reset(self, configuration=STANDARD):
         """TODO
 
         Parameter
@@ -374,7 +392,7 @@ class Abalone(pygame.sprite.Sprite):
         pygame.image.save(screen, os.path.join(SNAP_FOLDER, file_name))
         
     @staticmethod
-    def compute_distance(p1, p2):
+    def distance(p1, p2):
         """Compute the distance between two points (p1, p2)."""
         return math.sqrt((p2[0] - p1[0])**2 + (p2[1] - p1[1])**2)
 
