@@ -66,7 +66,6 @@ MARBLE_FREE = pygame.image.load(
     os.path.join(IMAGES_DIR, "marble_empty.png")
     ).convert_alpha()
 
-MARBLE_RED.get_rect().inflate_ip(2, 2)
 MARBLE_SIZE = MARBLE_RED.get_rect().size[0] # All marbles have the same size
 MAX_DISTANCE_MARBLE = MARBLE_SIZE*sqrt(1.25) # Max distance between two neighbouring marbles (diagonal)
 

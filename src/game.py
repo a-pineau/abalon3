@@ -3,7 +3,7 @@
 import sys
 import os
 
-from os.path import join, dirname, abspath
+from os.path import (join, dirname, abspath)
 # Manually places the window
 os.environ['SDL_VIDEO_WINDOW_POS'] = "%d,%d" % (100, 100)
 sys.path.insert(0, abspath(join(dirname(__file__), "src")))
@@ -44,7 +44,6 @@ def main():
                 # Confirming move
                 elif event.key == pg.K_SPACE:
                     moving = False
-                    single = False
                     board.update(valid_move)
                 # Resetting game
                 elif event.key == pg.K_r:
@@ -55,18 +54,17 @@ def main():
                 pick = board.normalize_coordinates(pg.mouse.get_pos())
                 # Checking pick validity (i.e. out of board or free marble picked is invalid)
                 if not pick:
-                    print("Pick out of bounds!")
                     continue
                 # Move is valid, getting marble's data
                 moving = True
-                valid_move = False
                 pick_value = board.get_value(pick)
                 pick_marble = board.rect_marbles[pick]
                 pick_center = pick_marble.center
                 # Can only pick the color being played
                 if pick_value != board.current_color:
                     moving = False
-            # Updating board
+                print(pick, pick_center)
+            # Releasing selection
             elif event.type == pg.MOUSEBUTTONUP:
                 moving = False
                 path = False
@@ -76,7 +74,6 @@ def main():
                 pick_marble.move_ip(event.rel)
                 target = board.normalize_coordinates(mouse)
                 if not target:
-                    print('Target out of bounds!')
                     continue # User's target is invalid (out of bounds)
                 # Valid target otherwise
                 target_center = board.rect_marbles[target].center
@@ -91,11 +88,11 @@ def main():
                     continue
                 centers = board.select_range(pick)
                 value = board.get_value(pick)
-                if value != board.current_color and len(centers) in (2, 3):
-                    valid_move = board.new_range(pick, centers)
+                if centers:
+                    valid_move = board.new_range(pick, value, centers)
         # Overall display
         board.display(screen, valid_move, path)
-        # :)))))))))))))
+        # Displaying the moving selected marble
         if moving: 
             origin_marble = board.rect_marbles[pick]
             screen.blit(const.MARBLE_FREE, origin_marble)
