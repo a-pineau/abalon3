@@ -1,7 +1,8 @@
 import math
+import random
 import pygame as pg
+import display as dsp
 
-from display_features import *
 from pygame.locals import *
 from constants import *
 from copy import deepcopy
@@ -46,13 +47,15 @@ class Abalone(pygame.sprite.Sprite):
         
         super().__init__()
         self.data = deepcopy(configuration)
-        self.current_color = 2 # Change to random choice
+        self.blue_deadzone = deepcopy(BLUE_DEADZONE)
+        self.yellow_deadzone = deepcopy(YELLOW_DEADZONE)
+        self.current_color = random.choice((2, 3))
+        self.scores = {"Blue": 0, "Yellow": 0}
         self.rect_marbles = {}
         self.rect_coordinates = []
         self.new_colors = {}
         self.new_marbles = {}
         self.buffer_dead_marble = {}
-        self.dead_marbles = {}
         self.build_marbles()
         
     def build_marbles(self):   
@@ -65,93 +68,15 @@ class Abalone(pygame.sprite.Sprite):
                 x = FIRST_X - MARBLE_SIZE * (0.5*(len(row) - 5) - i_col) 
                 y = FIRST_Y + MARBLE_SIZE * i_row
                 self.rect_coordinates.append((x, y))
-        # Deadzones
-        self.blue_deadzone = deepcopy(BLUE_DEADZONE)
-        self.yellow_deadzone = deepcopy(YELLOW_DEADZONE)
 
-    def display(self, screen, valid_move, path) -> None:
-        """
-        TODO
-        """
-        self.display_marbles(screen) # Displays board
-        self.display_new_colors(screen) # Displays marble with chaning colors (if any)
-        self.display_dead_marble(screen) # Displays the current dead marble (if any)
-        # Displays the current dead marble (if any)
-        # Displays and a path to showing the move
-        if valid_move and self.new_marbles:
-            self.message(screen, *CONFIRM_MOVE)
-            if path:
-                first_entry = list(self.new_marbles.keys())[0]
-                if self.buffer_dead_marble:
-                    last_entry = list(self.buffer_dead_marble.keys())[0]
-                    last_center = (
-                        last_entry[0] + MARBLE_SIZE//2, 
-                        last_entry[1] + MARBLE_SIZE//2
-                    )
-                else:
-                    last_entry = list(self.new_marbles.keys())[-1]
-                    last_center = self.rect_marbles[last_entry].center
-                first_center = self.rect_marbles[first_entry].center
-                draw_path(first_center, last_center, screen, GREEN3, 3)
-        self.display_deadzones(screen)
-        # TODO
-    
-    @staticmethod
-    def message(screen, msg, font_size, color, position):
-        """
-        TODO
-        """ 
-        font = pg.font.SysFont("Calibri", font_size)
-        text = font.render(msg, True, color)
-        text_rect = text.get_rect()
-        text_rect.centerx, text_rect.top = position
-        screen.blit(text, text_rect)
+    def get_enemy(self) -> int:
+        """Returns the enemy of the current color being played."""
+        return 3 if self.current_color == 2 else 2
 
-    def display_marbles(self, screen):
-        """
-        TODO
-        """
-        screen.fill(BACKGROUND)
-        iter_rect_coordinates = iter(self.rect_coordinates)
-        # Displays the board
-        for i_row, row in enumerate(self.data):
-            for i_col, value in enumerate(row):
-                x, y = next(iter_rect_coordinates)
-                screen.blit(MARBLE_IMGS[value], (x, y))
-                # Also updates the rect marbles
-                r = MARBLE_IMGS[value].get_rect(topleft = (x, y))
-                size = r.size[0]
-                self.rect_marbles[(i_row, i_col)] = r
-                # pg.draw.rect(screen, RED2, pygame.Rect(x, y, size, size), 1) # Debug
-
-    def display_new_colors(self, screen):
-        """
-        TODO
-        """
-        for coords, new_color in self.new_colors.items():
-            marble = self.rect_marbles[coords]
-            screen.blit(new_color, marble)
-
-    def display_dead_marble(self, screen):
-        """
-        TODO
-        """
-        for buffer_marble, buffer_color in self.buffer_dead_marble.items():
-            screen.blit(buffer_color, buffer_marble)
-            skull_x = buffer_marble[0] + MARBLE_SIZE/5
-            skull_y = buffer_marble[1] + MARBLE_SIZE/5
-            screen.blit(SKULL, (skull_x, skull_y))
-
-    def display_deadzones(self, screen):
-        deadzones = zip(self.blue_deadzone.items(), self.yellow_deadzone.items())
-        for (b_pos, b_val), (y_pos, y_val) in deadzones:
-            b_marble = MARBLE_IMGS[b_val]
-            y_marble = MARBLE_IMGS[y_val]
-            screen.blit(b_marble, b_pos)
-            screen.blit(y_marble, y_pos)
-    
-    # Not used (so far)
     def get_marble_coordinates(self, index) -> tuple:
+        """
+        TODO
+        """
         r, c = index
         len_r = len(self.data[r])
         m_x = FIRST_X - MARBLE_SIZE * (0.5*(len_r-5) - c)
@@ -174,6 +99,16 @@ class Abalone(pygame.sprite.Sprite):
         """TODO"""
         r, c = index
         return self.data[r][c]
+
+    def check_win(self):
+        """
+        TODO
+        """
+        if self.scores["Blue"] == 6:
+            return 2
+        if self.scores["Yellow"] == 6:
+            return 3
+        return False
 
     def normalize_coordinates(self, position):
         """
@@ -200,7 +135,7 @@ class Abalone(pygame.sprite.Sprite):
         target_value = self.get_value(target)
         buffer_target = target
         friend = self.current_color
-        enemy = self.enemy()
+        enemy = self.get_enemy()
         colors = [friend] # To keep track of the colors we meet
         sumito = False        
 
@@ -208,11 +143,11 @@ class Abalone(pygame.sprite.Sprite):
             # Checking if we're killing a marble (this cannot occur during the first iteration)
             if not target:
                 # Position of the buffer dead marble
-                dead = next_spot[0]-MARBLE_SIZE//2, next_spot[1]-MARBLE_SIZE//2
+                dead = next_spot[0], next_spot[1]
                 if self.buffer_dead_marble: 
                     self.buffer_dead_marble.clear()
                 last_marble = colors[-1]
-                self.buffer_dead_marble[dead] = MARBLE_IMGS[-last_marble]
+                self.buffer_dead_marble[dead] = -last_marble
                 return True
             else:
                 target_center = self.rect_marbles[target].center
@@ -249,8 +184,8 @@ class Abalone(pygame.sprite.Sprite):
                 if target_value == 1:
                     return True
             # Getting the next spot
-            nx = (target_center[0]-origin_center[0]) / MARBLE_SIZE
-            ny = (target_center[1]-origin_center[1]) / MARBLE_SIZE
+            nx = (target_center[0] - origin_center[0]) / MARBLE_SIZE
+            ny = (target_center[1] - origin_center[1]) / MARBLE_SIZE
             next_spot = self.next_spot(target_center, nx, ny)
             # Updating origin/target positions
             origin_center = target_center
@@ -342,18 +277,30 @@ class Abalone(pygame.sprite.Sprite):
                 self.data[x][y] = value
             # Updating deadzone if killing one marble
             if self.buffer_dead_marble:
-                print(self.buffer_dead_marble)
+                value = next(iter(self.buffer_dead_marble.values()))
+                # Getting the deadzone corresponding to the killed marble (blue or yellow)
+                if value == -2:
+                    self.scores["Yellow"] += 1
+                    deadzone = self.blue_deadzone
+                else:
+                    self.scores["Blue"] += 1
+                    deadzone = self.yellow_deadzone
+                for pos in deadzone:
+                    if deadzone[pos] == 1:
+                        deadzone[pos] = value
+                        break
+            self.current_color = self.get_enemy()
         self.clear_buffers()
         
     def reset(self, configuration=STANDARD):
         """
         TODO
         """
+        self.current_color = random.choice((2, 3))
         self.data = deepcopy(configuration)
         self.blue_deadzone = deepcopy(BLUE_DEADZONE)
         self.yellow_deadzone = deepcopy(YELLOW_DEADZONE)
         self.clear_buffers()
-        self.dead_marbles.clear()
 
     def clear_buffers(self):
         """TODO.
@@ -367,7 +314,8 @@ class Abalone(pygame.sprite.Sprite):
         self.new_marbles.clear()
         self.new_colors.clear()
         self.buffer_dead_marble.clear()
-        
+            
+    ######### Static Methods #########
     @staticmethod
     def next_spot(origin, nx, ny):
         """Compute the next spot of given marble coordinates.
@@ -386,14 +334,6 @@ class Abalone(pygame.sprite.Sprite):
         spot_x = origin[0] + MARBLE_SIZE * nx
         spot_y = origin[1] + MARBLE_SIZE * ny
         return int(spot_x), int(spot_y)
-    
-    def enemy(self) -> int:
-        """Returns the enemy of the current color being played."""
-        return 3 if self.current_color == 2 else 2
-    
-    
-    # Static Methods
-    # --------------
     
     @staticmethod
     def record_game(screen) -> None:
