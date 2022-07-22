@@ -53,9 +53,9 @@ class Abalone(pygame.sprite.Sprite):
         self.new_marbles = {}
         self.buffer_dead_marble = {}
         self.dead_marbles = {}
-        self.get_rect_coordinates()
+        self.build_marbles()
         
-    def get_rect_coordinates(self):   
+    def build_marbles(self):   
         """
         TODO
         """
@@ -64,6 +64,23 @@ class Abalone(pygame.sprite.Sprite):
                 x = FIRST_X - MARBLE_SIZE * (0.5*(len(row) - 5) - i_col) 
                 y = FIRST_Y + MARBLE_SIZE * i_row
                 self.rect_coordinates.append((x, y))
+
+        self.blue_deadzone = {
+            (FIRST_DZ_X, FIRST_BDZ_Y): 1,
+            (FIRST_DZ_X + MARBLE_SIZE, FIRST_BDZ_Y): 1,
+            (FIRST_DZ_X + MARBLE_SIZE*2, FIRST_BDZ_Y): 1,
+            (FIRST_DZ_X + MARBLE_SIZE*0.5, FIRST_BDZ_Y + MARBLE_SIZE): 1,
+            (FIRST_DZ_X + MARBLE_SIZE*1.5, FIRST_BDZ_Y + MARBLE_SIZE): 1,
+            (FIRST_DZ_X + MARBLE_SIZE, FIRST_BDZ_Y + MARBLE_SIZE*2): 1,
+        }
+        self.yellow_deadzone = {
+            (FIRST_DZ_X + MARBLE_SIZE, FIRST_YDZ_Y): 1,
+            (FIRST_DZ_X + MARBLE_SIZE*0.5, FIRST_YDZ_Y + MARBLE_SIZE): 1,
+            (FIRST_DZ_X + MARBLE_SIZE*1.5, FIRST_YDZ_Y + MARBLE_SIZE): 1,
+            (FIRST_DZ_X, FIRST_YDZ_Y + MARBLE_SIZE*2): 1,
+            (FIRST_DZ_X + MARBLE_SIZE, FIRST_YDZ_Y + MARBLE_SIZE*2): 1,
+            (FIRST_DZ_X + MARBLE_SIZE*2, FIRST_YDZ_Y + MARBLE_SIZE*2): 1,
+        }
 
     def display(self, screen, valid_move, path) -> None:
         """
@@ -80,13 +97,16 @@ class Abalone(pygame.sprite.Sprite):
                 first_entry = list(self.new_marbles.keys())[0]
                 if self.buffer_dead_marble:
                     last_entry = list(self.buffer_dead_marble.keys())[0]
-                    last_center = (last_entry[0]+MARBLE_SIZE//2, last_entry[1]+MARBLE_SIZE//2)
+                    last_center = (
+                        last_entry[0] + MARBLE_SIZE//2, 
+                        last_entry[1] + MARBLE_SIZE//2
+                    )
                 else:
                     last_entry = list(self.new_marbles.keys())[-1]
                     last_center = self.rect_marbles[last_entry].center
                 first_center = self.rect_marbles[first_entry].center
                 draw_path(first_center, last_center, screen, GREEN3, 3)
-        # Displays the deadzone
+        self.display_deadzones(screen)
         # TODO
     
     @staticmethod
@@ -117,7 +137,6 @@ class Abalone(pygame.sprite.Sprite):
                 self.rect_marbles[(i_row, i_col)] = r
                 # pg.draw.rect(screen, RED2, pygame.Rect(x, y, size, size), 1) # Debug
 
-
     def display_new_colors(self, screen):
         """
         TODO
@@ -135,6 +154,14 @@ class Abalone(pygame.sprite.Sprite):
             skull_x = buffer_marble[0] + MARBLE_SIZE/5
             skull_y = buffer_marble[1] + MARBLE_SIZE/5
             screen.blit(SKULL, (skull_x, skull_y))
+
+    def display_deadzones(self, screen):
+        deadzones = zip(self.blue_deadzone.items(), self.yellow_deadzone.items())
+        for (b_pos, b_val), (y_pos, y_val) in deadzones:
+            b_marble = MARBLE_IMGS[b_val]
+            y_marble = MARBLE_IMGS[y_val]
+            screen.blit(b_marble, b_pos)
+            screen.blit(y_marble, y_pos)
     
     # Not used (so far)
     def get_marble_coordinates(self, index) -> tuple:
@@ -304,8 +331,8 @@ class Abalone(pygame.sprite.Sprite):
                 # If one on the new spots isn't free
                 nonfree_spots = any(self.get_value(c) != 1 for c in new_coords)
             # Or if the target isn't in the neigbourhood
-            wrong_destination = self.distance(centers[-1], target) > MAX_DISTANCE_MARBLE
-            if nonfree_spots or wrong_destination:
+            not_neighbour = self.distance(centers[-1], target) > MAX_DISTANCE_MARBLE
+            if nonfree_spots or not_neighbour:
                 if MARBLE_RED not in self.new_colors.values():
                     self.new_colors[new_coords[-1]] = MARBLE_RED
                     self.new_marbles.clear()

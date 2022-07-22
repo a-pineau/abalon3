@@ -77,9 +77,13 @@ SKULL = pygame.transform.rotozoom(SKULL, 0, 0.7)  # Adjusting size
 
 # Window size
 WIDTH = 900
-FIRST_X = WIDTH*0.5 - MARBLE_SIZE*2.5 # Centering board inside game window
+FIRST_X = WIDTH*0.6 - MARBLE_SIZE*2.5 
 FIRST_Y = 60 # Defines window's height
 HEIGHT = FIRST_Y*2 + MARBLE_SIZE*9
+
+FIRST_DZ_X = 70
+FIRST_BDZ_Y = FIRST_Y + MARBLE_SIZE
+FIRST_YDZ_Y = FIRST_Y + MARBLE_SIZE*5
 
 # Keys are arbitrary chosen
 MARBLE_IMGS = {
