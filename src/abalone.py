@@ -59,28 +59,15 @@ class Abalone(pygame.sprite.Sprite):
         """
         TODO
         """
+        # Board
         for i_row, row in enumerate(self.data):
             for i_col in range(len(row)):
                 x = FIRST_X - MARBLE_SIZE * (0.5*(len(row) - 5) - i_col) 
                 y = FIRST_Y + MARBLE_SIZE * i_row
                 self.rect_coordinates.append((x, y))
-
-        self.blue_deadzone = {
-            (FIRST_DZ_X, FIRST_BDZ_Y): 1,
-            (FIRST_DZ_X + MARBLE_SIZE, FIRST_BDZ_Y): 1,
-            (FIRST_DZ_X + MARBLE_SIZE*2, FIRST_BDZ_Y): 1,
-            (FIRST_DZ_X + MARBLE_SIZE*0.5, FIRST_BDZ_Y + MARBLE_SIZE): 1,
-            (FIRST_DZ_X + MARBLE_SIZE*1.5, FIRST_BDZ_Y + MARBLE_SIZE): 1,
-            (FIRST_DZ_X + MARBLE_SIZE, FIRST_BDZ_Y + MARBLE_SIZE*2): 1,
-        }
-        self.yellow_deadzone = {
-            (FIRST_DZ_X + MARBLE_SIZE, FIRST_YDZ_Y): 1,
-            (FIRST_DZ_X + MARBLE_SIZE*0.5, FIRST_YDZ_Y + MARBLE_SIZE): 1,
-            (FIRST_DZ_X + MARBLE_SIZE*1.5, FIRST_YDZ_Y + MARBLE_SIZE): 1,
-            (FIRST_DZ_X, FIRST_YDZ_Y + MARBLE_SIZE*2): 1,
-            (FIRST_DZ_X + MARBLE_SIZE, FIRST_YDZ_Y + MARBLE_SIZE*2): 1,
-            (FIRST_DZ_X + MARBLE_SIZE*2, FIRST_YDZ_Y + MARBLE_SIZE*2): 1,
-        }
+        # Deadzones
+        self.blue_deadzone = deepcopy(BLUE_DEADZONE)
+        self.yellow_deadzone = deepcopy(YELLOW_DEADZONE)
 
     def display(self, screen, valid_move, path) -> None:
         """
@@ -349,9 +336,13 @@ class Abalone(pygame.sprite.Sprite):
         TODO
         """
         if valid_move:
+            # Updating board
             for pos, value in self.new_marbles.items():
                 x, y = pos
                 self.data[x][y] = value
+            # Updating deadzone if killing one marble
+            if self.buffer_dead_marble:
+                print(self.buffer_dead_marble)
         self.clear_buffers()
         
     def reset(self, configuration=STANDARD):
@@ -359,6 +350,8 @@ class Abalone(pygame.sprite.Sprite):
         TODO
         """
         self.data = deepcopy(configuration)
+        self.blue_deadzone = deepcopy(BLUE_DEADZONE)
+        self.yellow_deadzone = deepcopy(YELLOW_DEADZONE)
         self.clear_buffers()
         self.dead_marbles.clear()
 
