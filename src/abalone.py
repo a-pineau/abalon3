@@ -51,29 +51,15 @@ class Abalone(pygame.sprite.Sprite):
         self.yellow_deadzone = deepcopy(YELLOW_DEADZONE)
         self.current_color = random.choice((2, 3))
         self.scores = {"Blue": 0, "Yellow": 0}
-        self.rect_marbles = {}
-        self.rect_coordinates = []
         self.new_colors = {}
         self.new_marbles = {}
         self.buffer_dead_marble = {}
-        self.build_marbles()
-        
-    def build_marbles(self):   
-        """
-        TODO
-        """
-        # Board
-        for i_row, row in enumerate(self.data):
-            for i_col in range(len(row)):
-                x = FIRST_X - MARBLE_SIZE * (0.5*(len(row) - 5) - i_col) 
-                y = FIRST_Y + MARBLE_SIZE * i_row
-                self.rect_coordinates.append((x, y))
 
     def get_enemy(self) -> int:
         """Returns the enemy of the current color being played."""
         return 3 if self.current_color == 2 else 2
 
-    def get_marble_coordinates(self, index) -> tuple:
+    def get_coordinates(self, index) -> tuple:
         """
         TODO
         """
@@ -90,7 +76,7 @@ class Abalone(pygame.sprite.Sprite):
         if topleft is not None:
             m_x, m_y = topleft
         else:
-            m_x, m_y = self.get_marble_coordinates(index)
+            m_x, m_y = self.get_coordinates(index)
         c_x = int(m_x + MARBLE_SIZE*0.5)
         c_y = int(m_y + MARBLE_SIZE*0.5)
         return c_x, c_y
@@ -130,8 +116,8 @@ class Abalone(pygame.sprite.Sprite):
         """
         self.clear_buffers()
         self.new_marbles[origin] = 1 # If the move is valid, the picked marble will become free
-        origin_center = self.rect_marbles[origin].center
-        target_center = self.rect_marbles[target].center
+        origin_center = self.get_center(origin)
+        target_center = self.get_center(target)
         target_value = self.get_value(target)
         buffer_target = target
         friend = self.current_color
@@ -150,7 +136,7 @@ class Abalone(pygame.sprite.Sprite):
                 self.buffer_dead_marble[dead] = -last_marble
                 return True
             else:
-                target_center = self.rect_marbles[target].center
+                target_center = self.get_center(target)
                 target_value = self.get_value(target)
                     
             if target_value in (enemy, friend):
@@ -240,7 +226,7 @@ class Abalone(pygame.sprite.Sprite):
         TODO
         """
         if value != self.current_color and len(centers) in (2, 3):
-            target = self.rect_marbles[pick].center
+            target = self.get_center(pick)
             origin = centers[-1][0], centers[-1][1]
             nx = (target[0] - origin[0]) / MARBLE_SIZE
             ny = (target[1] - origin[1]) / MARBLE_SIZE
@@ -270,6 +256,7 @@ class Abalone(pygame.sprite.Sprite):
         """
         TODO
         """
+        print(valid_move)
         if valid_move:
             # Updating board
             for pos, value in self.new_marbles.items():
@@ -297,6 +284,8 @@ class Abalone(pygame.sprite.Sprite):
         TODO
         """
         self.current_color = random.choice((2, 3))
+        self.scores["Blue"] = 0
+        self.scores["Yellow"] = 0
         self.data = deepcopy(configuration)
         self.blue_deadzone = deepcopy(BLUE_DEADZONE)
         self.yellow_deadzone = deepcopy(YELLOW_DEADZONE)

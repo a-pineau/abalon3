@@ -5,7 +5,7 @@ import os
 
 from os.path import (join, dirname, abspath)
 # Manually places the window
-os.environ['SDL_VIDEO_WINDOW_POS'] = "%d,%d" % (500, 0)
+os.environ['SDL_VIDEO_WINDOW_POS'] = "%d,%d" % (0, 0)
 sys.path.insert(0, abspath(join(dirname(__file__), "src")))
 
 import pygame as pg
@@ -44,11 +44,13 @@ def main():
                 elif event.key == pg.K_SPACE:
                     moving = False
                     board.update(valid_move)
+                    valid_move = False
                     game_over = board.check_win()
                 # Resetting game
                 elif event.key == pg.K_r:
                     board.reset()
                     game_over = False
+                    path = False
             # Selecting a single marble
             if not game_over:
                 if event.type == pg.MOUSEBUTTONDOWN and not p_keys[pg.K_LSHIFT]:
@@ -60,7 +62,8 @@ def main():
                     # Move is valid, getting marble's data
                     moving = True
                     pick_value = board.get_value(pick)
-                    pick_marble = board.rect_marbles[pick]
+                    rx, ry = board.get_coordinates(pick)
+                    pick_marble = const.MARBLE_IMGS[pick_value].get_rect(topleft=(rx, ry))
                     pick_center = pick_marble.center
                     # Can only pick the color being played
                     if pick_value != board.current_color:
@@ -77,7 +80,7 @@ def main():
                     if not target:
                         continue # User's target is invalid (out of bounds)
                     # Valid target otherwise
-                    target_center = board.rect_marbles[target].center
+                    target_center = board.get_center(target)
                     d = board.distance(pick_center, target_center)
                     # the target must be in the pick's neighborhood and cannot be the pick itself
                     if d <= const.MAX_DISTANCE_MARBLE and target != pick:
@@ -92,11 +95,11 @@ def main():
                     if centers:
                         valid_move = board.new_range(pick, value, centers)
         # Overall display
-        dsp.overall_display(screen, board, valid_move, path)
+        dsp.overall_display(screen, board, game_over, valid_move, path)
         # Displaying the moving selected marble
         if moving: 
-            origin_marble = board.rect_marbles[pick]
-            screen.blit(const.MARBLE_FREE, origin_marble)
+            origin_pos = board.get_coordinates(pick)
+            screen.blit(const.MARBLE_FREE, origin_pos)
             screen.blit(const.MARBLE_IMGS[pick_value], pick_marble)
         # Updating screen
         pg.display.update()

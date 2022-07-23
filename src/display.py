@@ -8,41 +8,38 @@ from constants import *
 
 pygame.init()
 
-def overall_display(screen, board, valid_move, path) -> None:
+def overall_display(screen, board, game_over, valid_move, path) -> None:
     """
     TODO
     """
+    message(screen, *RESET_GAME)
+    message(screen, *QUIT_GAME)
     display_marbles(screen, board)
     display_new_colors(screen, board)
     display_dead_marble(screen, board) 
     display_infos_move(screen, valid_move, path, board)
     display_deadzones(screen, board) 
-    display_player(screen, board)
-    message(screen, *RESET_GAME)
-    message(screen, *QUIT_GAME)
+    display_player(screen, board, game_over)
+    display_winner(screen, game_over)
 
 def display_marbles(screen, board) -> None:
     """
     TODO
     """
     screen.fill(BACKGROUND)
-    iter_rect_coordinates = iter(board.rect_coordinates)
     # Displays the board
     for i_row, row in enumerate(board.data):
         for i_col, value in enumerate(row):
-            x, y = next(iter_rect_coordinates)
+            x, y = board.get_coordinates((i_row, i_col))
             screen.blit(MARBLE_IMGS[value], (x, y))
-            # Also updates the rect marbles
-            r = MARBLE_IMGS[value].get_rect(topleft = (x, y))
-            board.rect_marbles[(i_row, i_col)] = r
 
 def display_new_colors(screen, board) -> None:
     """
     TODO
     """
-    for coords, new_color in board.new_colors.items():
-        marble = board.rect_marbles[coords]
-        screen.blit(new_color, marble)
+    for (x, y), new_color in board.new_colors.items():
+        pos = board.get_coordinates((x, y))
+        screen.blit(new_color, pos)
 
 def display_dead_marble(screen, board) -> None:
     """
@@ -80,20 +77,30 @@ def display_infos_move(screen, valid_move, path, board) -> None:
                 last_center = last_entry[0], last_entry[1]
             else:
                 last_entry = list(board.new_marbles.keys())[-1]
-                last_center = board.rect_marbles[last_entry].center
-            first_center = board.rect_marbles[first_entry].center
+                last_center = board.get_center(last_entry)
+            first_center = board.get_center(first_entry)
             draw_path(first_center, last_center, screen, GREEN3, 3)
-    if not valid_move and board.new_colors:
+    if MARBLE_RED in board.new_colors.values():
         message(screen, *WRONG_MOVE)
 
-def display_player(screen, board) -> None:
+def display_player(screen, board, game_over) -> None:
     """
     TODO
     """
-    if board.current_color == 2:
-        message(screen, *CURRENT_PLAYERB)
-    else:
-        message(screen, *CURRENT_PLAYERY)
+    if not game_over:
+        if board.current_color == 2:
+            message(screen, *CURRENT_PLAYERB)
+        else:
+            message(screen, *CURRENT_PLAYERY)
+
+def display_winner(screen, game_over) -> None:
+    """
+    TODO
+    """
+    if game_over == 2:
+        message(screen, *BLUE_WINS)
+    if game_over == 3:
+        message(screen, *YELLOW_WINS)
 
 def message(screen, msg, font_size, color, position) -> None:
     """
