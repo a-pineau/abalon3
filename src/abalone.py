@@ -2,93 +2,118 @@ import math
 import random
 import pygame as pg
 import display as dsp
+import constants as const
 
 from pygame.locals import *
-from constants import *
 from copy import deepcopy
 
-pygame.init()
+pg.init()
 
 
-class Abalone(pygame.sprite.Sprite):
+class Abalone(pg.sprite.Sprite):
     """
     A class used to represent a standard Abalone board.
-    Both players have 14 marbles.
+    Both players have 14 marbles (blue and yellow).
+    A white marble defines an empty spot.
     A player loses whenever 6 of his marbles are out.
+    IMPORTANT: Top-left marble's position defines the position of all marbles.
+    This position is given by the const.FIRST_X and const.FIRST_Y given in constants.py
     
+    Parameter
+    ---------
+    configuration: list (optional, default=STANDARD)
+        Initial positions of the marbles on the board.
+        the STANDARD configuration (default) is the one commonly used in
+        mainstream abalone games.
+        See constants.py for more configurations.
     Attributes
     ----------
-
-    Methods
-    -------
-
-
-    Static Methods
-    --------------
-
+    data: list (of lists)
+        List of list. Defines the state of every marble on the Abalone board.
+        A state can have 3 values: 1: empty spot, 2: blue marble, 3: yellow marble
+        Each list defines a row of the board.
+        By convention, the first row represents the board's top row.
+    blue_deadzone: list (of lists)
+        Defines the zone where the blue marbles are resting in piece.
+        This is purely for display purposes. It does not affect the state of the board.
+    yellow_deadzone: list (of lists)
+        Same than above, but for yellow marbles
+    current_color: int
+        Current color being played. Randomly chosen when starting a new game.
+        Can take two values: 2 (blue marbles) or 3 (yellow marbles)
+    scores: dict
+        key: string, value: int
+        Defines the score of the blue and yellow players.
+        Note: this isn't really necessary as the score can be obtained by analyzing the deadzones.
+        But it requires to convert the values of the deadzones into lists and count the marbles.
+        So the scores dict is simply easier to work with.
+    new_colors: dict
+        Defines the marbles that will change color when displaying the board.
+        Used for display purposes only. It does not affect the state of the board.
+    new_marbles: dict
+        key: tuple of ints (new marbles positions), value: int (new marbles values)
+        Defines the marbles that will be changed after a valid move
     """
     
-    # Constructor
-    # -----------
-    def __init__(self, configuration=STANDARD):
-        """Constructor.
-
-        Calls the parent constructor and initializes all the attributes.
-        It also builds to marbles to their initial positions with respect to
-        the chosen configuration.
-
+    ######### Constructor #########
+    def __init__(self, configuration=const.STANDARD):
+        """
+        Initializes the starting configuration and all the atributes.
         Parameter
         ---------
         configuration: list (optional, default=STANDARD)
-            Initial positions of the marbles on the board.
-            the STANDARD configuration is the one commonly used in
-            mainstream abalone games.
+            Starting configuration. Other configurations can be found in constants.py
         """
-        
         super().__init__()
         self.data = deepcopy(configuration)
-        self.blue_deadzone = deepcopy(BLUE_DEADZONE)
-        self.yellow_deadzone = deepcopy(YELLOW_DEADZONE)
+        self.blue_deadzone = deepcopy(const.BLUE_DEADZONE)
+        self.yellow_deadzone = deepcopy(const.YELLOW_DEADZONE)
         self.current_color = random.choice((2, 3))
         self.scores = {"Blue": 0, "Yellow": 0}
         self.new_colors = {}
         self.new_marbles = {}
         self.buffer_dead_marble = {}
 
+    ######### Methods #########
     def get_enemy(self) -> int:
         """Returns the enemy of the current color being played."""
         return 3 if self.current_color == 2 else 2
 
-    def get_coordinates(self, index) -> tuple:
+    def get_center(self, loc) -> tuple:
         """
-        TODO
+        Returns the center (tuple of ints) of a marble 
+        given its corresponding location in self.data
+        The center is expressed in the Pygame frame (x-pixels x y-pixels)
+        Parameter
+        ---------
+        index: tuple of ints
+            (row, column) location of a given marble in self.data
         """
-        r, c = index
+        r, c = loc
         len_r = len(self.data[r])
-        m_x = FIRST_X - MARBLE_SIZE * (0.5*(len_r-5) - c)
-        m_y = FIRST_Y + MARBLE_SIZE * r
-        return int(m_x), m_y
+        m_x = const.FIRST_X - const.MARBLE_SIZE * (0.5*(len_r-5) - c)
+        m_x += const.MARBLE_SIZE*0.5
+        m_y = const.FIRST_Y + const.MARBLE_SIZE * r
+        m_y += const.MARBLE_SIZE*0.5
+        return int(m_x), int(m_y)
 
-    def get_center(self, index, topleft=None):
+    def get_value(self, loc) -> int:
         """
-        TODO
+        Returns the value (int) of a specific location.
+        Used for better readability only to avoid writing self.data[r][c] each time.
+        Parameter
+        ---------
+        index: tuple of ints
+            (row, column) location of a given marble in self.data
         """
-        if topleft is not None:
-            m_x, m_y = topleft
-        else:
-            m_x, m_y = self.get_coordinates(index)
-        c_x = int(m_x + MARBLE_SIZE*0.5)
-        c_y = int(m_y + MARBLE_SIZE*0.5)
-        return c_x, c_y
-
-    def get_value(self, index):
-        """TODO"""
-        r, c = index
+        r, c = loc
         return self.data[r][c]
 
     def check_win(self):
         """
-        TODO
+        Check if a player has won the game.
+        Returns False if not.
+        Returns the color of the corresponding player otherwise.
         """
         if self.scores["Blue"] == 6:
             return 2
@@ -102,10 +127,11 @@ class Abalone(pygame.sprite.Sprite):
         """
         x, y = position
         # Getting row index
-        r = (y-FIRST_Y) // MARBLE_SIZE 
+        r = (y - const.FIRST_Y) // const.MARBLE_SIZE 
         if 0 <= r < len(self.data): # len(self.data) = 9: Abalone board game has 9 rows
             len_row = len(self.data[r])
-            c = (x - (FIRST_X - 0.5*(len_row-5) * MARBLE_SIZE)) // MARBLE_SIZE
+            c = (x - (const.FIRST_X - 0.5*(len_row-5) * const.MARBLE_SIZE))
+            c //= const.MARBLE_SIZE
             if 0 <= int(c) in range(0, len_row):
                 return r, int(c)
         return False
@@ -152,7 +178,7 @@ class Abalone(pygame.sprite.Sprite):
             squeezed_enemy = enemy in colors and target_value == friend
             invalid_sumito = too_much_enemy or squeezed_enemy
             if too_much_marbles or invalid_sumito:
-                self.new_colors[buffer_target] = MARBLE_RED # Invalid move
+                self.new_colors[buffer_target] = const.MARBLE_RED # Invalid move
                 return False
             # If we keep finding our own marbles
             if own_marble and target not in self.new_marbles.keys():
@@ -170,9 +196,9 @@ class Abalone(pygame.sprite.Sprite):
                 if target_value == 1:
                     return True
             # Getting the next spot
-            nx = (target_center[0] - origin_center[0]) / MARBLE_SIZE
-            ny = (target_center[1] - origin_center[1]) / MARBLE_SIZE
-            next_spot = self.next_spot(target_center, nx, ny)
+            n_x = (target_center[0] - origin_center[0]) / const.MARBLE_SIZE
+            n_y = (target_center[1] - origin_center[1]) / const.MARBLE_SIZE
+            next_spot = self.next_spot(target_center, n_x, n_y)
             # Updating origin/target positions
             origin_center = target_center
             origin = self.normalize_coordinates(origin_center)
@@ -183,9 +209,9 @@ class Abalone(pygame.sprite.Sprite):
         TODO
         """
         # No need to check as a possibility (valid or not) has been found already
-        if MARBLE_GREEN in self.new_colors.values():
+        if const.MARBLE_GREEN in self.new_colors.values():
             return None
-        elif MARBLE_RED in self.new_colors.values():
+        elif const.MARBLE_RED in self.new_colors.values():
             return None 
         value = self.get_value(pick)
         if value == self.current_color:
@@ -194,7 +220,7 @@ class Abalone(pygame.sprite.Sprite):
         centers = [self.get_center(c) for c in self.new_marbles.keys()]
         # Checking range validity
         if self.check_range(value, centers):
-            self.new_colors[pick] = MARBLE_PURPLE 
+            self.new_colors[pick] = const.MARBLE_PURPLE 
         return centers
 
     def check_range(self, value, centers) -> bool:
@@ -207,7 +233,7 @@ class Abalone(pygame.sprite.Sprite):
             p0, p1 = centers[0], centers[1]
             d_p0_p1 = self.distance(p0, p1)
             # Only neighbouring marbles can form a range of 2
-            if d_p0_p1 > MAX_DISTANCE_MARBLE:
+            if d_p0_p1 > const.MAX_DISTANCE_MARBLE:
                 return False
         if len(centers) == 3:
             p0, p1, p2 = centers[0], centers[1], centers[2]
@@ -228,77 +254,71 @@ class Abalone(pygame.sprite.Sprite):
         if value != self.current_color and len(centers) in (2, 3):
             target = self.get_center(pick)
             origin = centers[-1][0], centers[-1][1]
-            nx = (target[0] - origin[0]) / MARBLE_SIZE
-            ny = (target[1] - origin[1]) / MARBLE_SIZE
-            new_coords = [self.next_spot(c, nx, ny) for c in centers]
-            new_coords = [self.normalize_coordinates(c) for c in new_coords]
-            # If new_coords cannot be all normalized, an out of bounds has been reached
-            if not all(new_coords):
+            nx = (target[0] - origin[0]) / const.MARBLE_SIZE
+            ny = (target[1] - origin[1]) / const.MARBLE_SIZE
+            new_centers = [self.next_spot(c, nx, ny) for c in centers]
+            new_centers = [self.normalize_coordinates(c) for c in new_centers]
+            # If new_centers cannot be all normalized, an out of bounds has been reached
+            if not all(new_centers):
                 nonfree_spots = False
             else:
                 # If one on the new spots isn't free
-                nonfree_spots = any(self.get_value(c) != 1 for c in new_coords)
+                nonfree_spots = any(self.get_value(c) != 1 for c in new_centers)
             # Or if the target isn't in the neigbourhood
-            not_neighbour = self.distance(centers[-1], target) > MAX_DISTANCE_MARBLE
+            not_neighbour = self.distance(centers[-1], target) > const.MAX_DISTANCE_MARBLE
             if nonfree_spots or not_neighbour:
-                if MARBLE_RED not in self.new_colors.values():
-                    self.new_colors[new_coords[-1]] = MARBLE_RED
+                if const.MARBLE_RED not in self.new_colors.values():
+                    self.new_colors[new_centers[-1]] = const.MARBLE_RED
                     self.new_marbles.clear()
                     return False
             # Valid move otherwise
-            for coords in new_coords:
-                self.new_colors[coords] = MARBLE_GREEN 
-                self.new_marbles[coords] = self.current_color
+            for new_c in new_centers:
+                self.new_colors[new_c] = const.MARBLE_GREEN 
+                self.new_marbles[new_c] = self.current_color
             return True
         return False
     
-    def update(self, valid_move):
-        """
-        TODO
-        """
-        print(valid_move)
-        if valid_move:
-            # Updating board
-            for pos, value in self.new_marbles.items():
-                x, y = pos
-                self.data[x][y] = value
-            # Updating deadzone if killing one marble
-            if self.buffer_dead_marble:
-                value = next(iter(self.buffer_dead_marble.values()))
-                # Getting the deadzone corresponding to the killed marble (blue or yellow)
-                if value == -2:
-                    self.scores["Yellow"] += 1
-                    deadzone = self.blue_deadzone
-                else:
-                    self.scores["Blue"] += 1
-                    deadzone = self.yellow_deadzone
-                for pos in deadzone:
-                    if deadzone[pos] == 1:
-                        deadzone[pos] = value
-                        break
-            self.current_color = self.get_enemy()
-        self.clear_buffers()
+    def update(self) -> None:
+        """Update the board and deadzones states"""
+        # Updating board
+        for pos, value in self.new_marbles.items():
+            x, y = pos
+            self.data[x][y] = value
+        # Updating deadzone if killing one marble
+        if self.buffer_dead_marble:
+            value = next(iter(self.buffer_dead_marble.values()))
+            # Getting the deadzone corresponding to the killed marble (blue or yellow)
+            if value == -2:
+                self.scores["Yellow"] += 1
+                deadzone = self.blue_deadzone
+            else:
+                self.scores["Blue"] += 1
+                deadzone = self.yellow_deadzone
+            # Filling the deadzone with killed marble
+            for pos in deadzone:
+                if deadzone[pos] == 1:
+                    deadzone[pos] = value
+                    break
+        # Updating current player's color
+        self.current_color = self.get_enemy()
         
-    def reset(self, configuration=STANDARD):
+    def reset(self, configuration=const.STANDARD):
         """
-        TODO
+        Reset and set a new game.
+        Parameter
+        ---------
+        configuration: list (optional, default=STANDARD)
         """
         self.current_color = random.choice((2, 3))
         self.scores["Blue"] = 0
         self.scores["Yellow"] = 0
         self.data = deepcopy(configuration)
-        self.blue_deadzone = deepcopy(BLUE_DEADZONE)
-        self.yellow_deadzone = deepcopy(YELLOW_DEADZONE)
+        self.blue_deadzone = deepcopy(const.BLUE_DEADZONE)
+        self.yellow_deadzone = deepcopy(const.YELLOW_DEADZONE)
         self.clear_buffers()
 
     def clear_buffers(self):
-        """TODO.
-
-        Parameter
-        ---------
-        screen: pygame.Surface (required)
-            Game window
-        """
+        """Clear ????"""
         
         self.new_marbles.clear()
         self.new_colors.clear()
@@ -306,45 +326,31 @@ class Abalone(pygame.sprite.Sprite):
             
     ######### Static Methods #########
     @staticmethod
-    def next_spot(origin, nx, ny):
-        """Compute the next spot of given marble coordinates.
+    def next_spot(origin, n_x, n_y):
+        """Compute the next spot of a marble given a vector.
+        The vector defines a direction (N, S, E, O, SE, SW, NE, NW)
 
         Parameters
         ----------
         origin: tuple of integers (required)
             Initial marble
-        target: tuple of integers (required)
-            Targetted marble
+        n_x: double
+            x-component of the vector
+        n_y: double
+            y_compnent of the vector
         Returns
         -------
         spot_x, spot_y: tuple of integers
             Coordinates of the next spot
         """
-        spot_x = origin[0] + MARBLE_SIZE * nx
-        spot_y = origin[1] + MARBLE_SIZE * ny
+        spot_x = origin[0] + const.MARBLE_SIZE * n_x
+        spot_y = origin[1] + const.MARBLE_SIZE * n_y
         return int(spot_x), int(spot_y)
-    
-    @staticmethod
-    def record_game(screen) -> None:
-        """Save a snapshot of the current grid to the SNAP_FOLDER.
-
-        Parameter
-        ---------
-        screen: pygame.Surface (required)
-            Game window
-        """
-
-        global n_snap
-        n_snap += 1
-        extension = "png"
-        file_name = f"snapshot_{n_snap}.{extension}"
-        pygame.image.save(screen, os.path.join(SNAP_FOLDER, file_name))
         
     @staticmethod
     def distance(p1, p2):
         """Compute the distance between two points (p1, p2)."""
         return math.sqrt((p2[0] - p1[0])**2 + (p2[1] - p1[1])**2)
-
 
 def main():
     pass

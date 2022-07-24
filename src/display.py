@@ -12,6 +12,7 @@ def overall_display(screen, board, game_over, valid_move, path) -> None:
     """
     TODO
     """
+    screen.fill(BACKGROUND)
     message(screen, *RESET_GAME)
     message(screen, *QUIT_GAME)
     display_marbles(screen, board)
@@ -26,20 +27,23 @@ def display_marbles(screen, board) -> None:
     """
     TODO
     """
-    screen.fill(BACKGROUND)
-    # Displays the board
-    for i_row, row in enumerate(board.data):
-        for i_col, value in enumerate(row):
-            x, y = board.get_coordinates((i_row, i_col))
-            screen.blit(MARBLE_IMGS[value], (x, y))
+    for i_r, r in enumerate(board.data):
+        for i_c, value in enumerate(r):
+            center = board.get_center((i_r, i_c))
+            rect = MARBLE_IMGS[value].get_rect()
+            rect.center = center
+            screen.blit(MARBLE_IMGS[value], rect)
+
 
 def display_new_colors(screen, board) -> None:
     """
     TODO
     """
-    for (x, y), new_color in board.new_colors.items():
-        pos = board.get_coordinates((x, y))
-        screen.blit(new_color, pos)
+    for index, new_color in board.new_colors.items():
+        center = board.get_center(index)
+        rect = new_color.get_rect()
+        rect.center = center
+        screen.blit(new_color, rect)
 
 def display_dead_marble(screen, board) -> None:
     """
@@ -52,6 +56,7 @@ def display_dead_marble(screen, board) -> None:
         marble_rect = marble.get_rect()
         marble_rect.center = pos
         screen.blit(marble, marble_rect)
+
 
 def display_deadzones(screen, board) -> None:
     """

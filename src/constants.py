@@ -20,7 +20,6 @@ FONT = pygame.font.SysFont("Calibri", 42)
 # Directories
 FILE_DIR = os.path.dirname(__file__)
 IMAGES_DIR = os.path.join(FILE_DIR, "../images")
-SNAP_FOLDER = "snapshots"
 
 # Colours
 BACKGROUND = (30, 30, 30)
@@ -122,7 +121,7 @@ CURRENT_PLAYERY = [
     CURRENT_PLAYERY_POSITION 
 ]
 # Blue wins
-BLUE_WINS_TXT = "Blue wins! GGs (reset or quit)"
+BLUE_WINS_TXT = "Blue wins! Reset or quit?"
 BLUE_WINS_FONT_SIZE = 35
 BLUE_WINS_COLOR = BLUE2
 BLUE_WINS_POSITION = WIDTH*0.01, FIRST_Y*0.15
@@ -133,7 +132,7 @@ BLUE_WINS = [
     BLUE_WINS_POSITION 
 ]
 # Yellow wins
-YELLOW_WINS_TXT = "Yellow wins! GGs (reset or quit)"
+YELLOW_WINS_TXT = "Yellow wins! Reset or quit?"
 YELLOW_WINS_FONT_SIZE = 35
 YELLOW_WINS_COLOR = YELLOW2
 YELLOW_WINS_POSITION = WIDTH*0.01, FIRST_Y*0.15
