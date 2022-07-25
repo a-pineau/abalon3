@@ -1,5 +1,3 @@
-"""Implements the game loop and handles the user's events."""
-
 import sys
 import os
 
@@ -11,17 +9,19 @@ sys.path.insert(0, abspath(join(dirname(__file__), "src")))
 import pygame as pg
 import constants as const
 import display as dsp
-from abalone import Abalone
+from board import Board
 
 SNAP_FOLDER = os.path.join(os.path.dirname(__file__), "snapshots")
 n_snap = 0
 
 # Game loop
 def main():
+    """Implements the game loop and handles the user's events"""
     pg.init()
     screen = pg.display.set_mode([const.WIDTH, const.HEIGHT])
     pg.display.set_caption("Abalon3")
-    board = Abalone()
+    board = Board()
+    record = False
     running = True
     moving = False
     game_over = False
@@ -48,7 +48,6 @@ def main():
                         board.update()
                     game_over = board.check_win()
                     board.clear_buffers()
-                    valid_move = False
                 # Resetting game
                 elif event.key == pg.K_r:
                     board.reset()
@@ -59,8 +58,9 @@ def main():
                 if event.type == pg.MOUSEBUTTONDOWN and not p_keys[pg.K_LSHIFT]:
                     path = True
                     pick = board.normalize_coordinates(pg.mouse.get_pos())
-                    # Checking pick validity (i.e. out of board or free marble picked is invalid)
-                    if not pick:
+                    # Checking pick validity 
+                    # Cant be out of bounds or must be current color
+                    if not pick or pick and board.get_value(pick) != board.current_color:
                         continue
                     # Move is valid, getting marble's data
                     moving = True
@@ -68,9 +68,6 @@ def main():
                     pick_center = board.get_center(pick)
                     pick_marble = const.MARBLE_IMGS[pick_value].get_rect()
                     pick_marble.center = pick_center
-                    # Can only pick the color being played
-                    if pick_value != board.current_color:
-                        moving = False
                 # Releasing selection
                 elif event.type == pg.MOUSEBUTTONUP:
                     moving = False
@@ -78,6 +75,7 @@ def main():
                     board.clear_buffers()
                 # Moving single marble
                 elif event.type == pg.MOUSEMOTION and moving:
+                    valid_move = False
                     pick_marble.move_ip(event.rel)
                     target = board.normalize_coordinates(mouse)
                     if not target:
@@ -87,16 +85,16 @@ def main():
                     d = board.distance(pick_center, target_center)
                     # the target must be in the pick's neighborhood and cannot be the pick itself
                     if d <= const.MAX_DISTANCE_MARBLE and target != pick:
-                        valid_move = board.move_single_marble(pick, target)
+                        valid_move = board.push_marble(pick, target)
                 # Moving multiple marbles
                 elif p_keys[pg.K_LSHIFT] and p_mouse[0]:
                     pick = board.normalize_coordinates(mouse)
                     if not pick:
                         continue
-                    centers = board.select_range(pick)
                     value = board.get_value(pick)
+                    centers = board.select_range(pick, value)
                     if centers:
-                        valid_move = board.new_range(pick, value, centers)
+                        valid_move = board.new_range(pick, centers)
         # Overall display
         dsp.overall_display(screen, board, game_over, valid_move, path)
         # Displaying the moving selected marble

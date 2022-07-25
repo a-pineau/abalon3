@@ -6,11 +6,23 @@ import pygame as pg
 from pygame import gfxdraw
 from constants import *
 
-pygame.init()
+pg.init()
 
 def overall_display(screen, board, game_over, valid_move, path) -> None:
     """
-    TODO
+    Overall board's display
+    Parameters
+    ----------
+    screen: pygame.Surface (required)
+        Game window
+    board: Board (required)
+        Abalone board
+    game_over: bool (required)
+        True if the game has ended, False otherwise
+    valid_move: bool (required)
+        True if a valid move has been performed, False otherwise
+    path: bool (required)
+        True if a path is drawn to emphasize a push, False otherwise
     """
     screen.fill(BACKGROUND)
     message(screen, *RESET_GAME)
@@ -18,14 +30,20 @@ def overall_display(screen, board, game_over, valid_move, path) -> None:
     display_marbles(screen, board)
     display_new_colors(screen, board)
     display_dead_marble(screen, board) 
-    display_infos_move(screen, valid_move, path, board)
+    display_infos_move(screen, board, valid_move, path)
     display_deadzones(screen, board) 
     display_player(screen, board, game_over)
     display_winner(screen, game_over)
 
 def display_marbles(screen, board) -> None:
     """
-    TODO
+    Displays marbles (Abalone's board only)
+    Parameters
+    ----------
+    screen: pygame.Surface (required)
+        Game window
+    board: Board (required)
+        Abalone board
     """
     for i_r, r in enumerate(board.data):
         for i_c, value in enumerate(r):
@@ -37,7 +55,15 @@ def display_marbles(screen, board) -> None:
 
 def display_new_colors(screen, board) -> None:
     """
-    TODO
+    Displays marbles with chaning colors.
+    Red when the move is invalid, green when valid, and purple when selecting a range.
+    Parameters
+    ----------
+    screen: pygame.Surface (required)
+        Game window
+    board: Board (required)
+        Abalone board
+
     """
     for index, new_color in board.new_colors.items():
         center = board.get_center(index)
@@ -47,7 +73,13 @@ def display_new_colors(screen, board) -> None:
 
 def display_dead_marble(screen, board) -> None:
     """
-    TODO
+    Displays a marble that is potentially being killed.
+    Parameters
+    ----------
+    screen: pygame.Surface (required)
+        Game window
+    board: Board (required)
+        Abalone board
     """
     if board.buffer_dead_marble:
         pos = next(iter(board.buffer_dead_marble.keys()))
@@ -60,7 +92,13 @@ def display_dead_marble(screen, board) -> None:
 
 def display_deadzones(screen, board) -> None:
     """
-    TODO
+    Displays both blue and yellow deadzones.
+    Parameters
+    ----------
+    screen: pygame.Surface (required)
+        Game window
+    board: Board (required)
+        Abalone board
     """
     deadzones = zip(board.blue_deadzone.items(), board.yellow_deadzone.items())
     for (b_pos, b_val), (y_pos, y_val) in deadzones:
@@ -69,9 +107,19 @@ def display_deadzones(screen, board) -> None:
         screen.blit(b_marble, b_pos)
         screen.blit(y_marble, y_pos)
 
-def display_infos_move(screen, valid_move, path, board) -> None:
+def display_infos_move(screen, board, valid_move, path) -> None:
     """
-    TODO
+    Displays validity of a move.
+    Parameters
+    ----------
+    screen: pygame.Surface (required)
+        Game window
+    board: Board (required)
+        Abalone board
+    valid_move: bool
+        True if the current move is valid, False otherwise
+    path: bool (required)
+        True if a path is drawn to emphasize a push, False otherwise
     """
     if valid_move and board.new_marbles:
         message(screen, *CONFIRM_MOVE)
@@ -90,7 +138,13 @@ def display_infos_move(screen, valid_move, path, board) -> None:
 
 def display_player(screen, board, game_over) -> None:
     """
-    TODO
+    Displays current player.
+    Parameters
+    ----------
+    screen: pygame.Surface (required)
+        Game window
+    board: Board (required)
+        Abalone board
     """
     if not game_over:
         if board.current_color == 2:
@@ -100,7 +154,13 @@ def display_player(screen, board, game_over) -> None:
 
 def display_winner(screen, game_over) -> None:
     """
-    TODO
+    Displays winner.
+    Parameters
+    ----------
+    screen: pygame.Surface (required)
+        Game window
+    game_over: int
+        Defines which player won
     """
     if game_over == 2:
         message(screen, *BLUE_WINS)
@@ -109,7 +169,10 @@ def display_winner(screen, game_over) -> None:
 
 def message(screen, msg, font_size, color, position) -> None:
     """
-    TODO
+    Displays a message on screen.
+    Parameters
+    ----------
+
     """ 
     font = pg.font.SysFont("Calibri", font_size)
     text = font.render(msg, True, color)
@@ -117,20 +180,20 @@ def message(screen, msg, font_size, color, position) -> None:
     screen.blit(text, text_rect)
 
 def draw_path(start, end, screen, color, width) -> None:
-    """Draw a line with two circles to enhance the visual effect.
+    """Draws a line with two circles to enhance the visual effect.
 
     Parameters
     ----------
     screen: pygame.display (required)
         Game window
-    colour: tuple of integers (required)
-        Colour's RGB code
+    color: tuple of int (required)
+        color's RGB code
     width: float (required)
         Line's width
     """
     x1, y1 = start
     x2, y2 = end
-    pygame.draw.line(screen, color, start, end, width)
+    pg.draw.line(screen, color, start, end, width)
     gfxdraw.aacircle(screen, x1, y1, width + 1, color)
     gfxdraw.filled_circle(screen, x1, y1, width + 1, color)
     gfxdraw.aacircle(screen, x2, y2, width + 1, color)

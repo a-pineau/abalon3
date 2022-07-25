@@ -10,7 +10,7 @@ from copy import deepcopy
 pg.init()
 
 
-class Abalone(pg.sprite.Sprite):
+class Board(pg.sprite.Sprite):
     """
     A class used to represent a standard Abalone board.
     Both players have 14 marbles (blue and yellow).
@@ -92,8 +92,8 @@ class Abalone(pg.sprite.Sprite):
         r, c = loc
         len_r = len(self.data[r])
         m_x = const.FIRST_X - const.MARBLE_SIZE * (0.5*(len_r-5) - c)
-        m_x += const.MARBLE_SIZE*0.5
         m_y = const.FIRST_Y + const.MARBLE_SIZE * r
+        m_x += const.MARBLE_SIZE*0.5
         m_y += const.MARBLE_SIZE*0.5
         return int(m_x), int(m_y)
 
@@ -104,7 +104,7 @@ class Abalone(pg.sprite.Sprite):
         Parameter
         ---------
         index: tuple of ints
-            (row, column) location of a given marble in self.data
+            (row, column) location in self.data of the corresponding marble 
         """
         r, c = loc
         return self.data[r][c]
@@ -123,7 +123,17 @@ class Abalone(pg.sprite.Sprite):
 
     def normalize_coordinates(self, position):
         """
-        TODO
+        Normalizes the position given into its location (row, column) on self.data
+        For instance, clicking on the top-left marble will return 0, 0 as it is 
+        the first marble in self.data
+        Parameter
+        ---------
+        position: tuple of ints (required)
+            Current position (e.g. mouse cursor)
+        Returns
+        -------
+        tuple of ints 
+            Corresponding location in self.data
         """
         x, y = position
         # Getting row index
@@ -136,9 +146,25 @@ class Abalone(pg.sprite.Sprite):
                 return r, int(c)
         return False
     
-    def move_single_marble(self, origin, target) -> bool:
+    def push_marble(self, origin, target) -> bool:
         """
-        TODO
+        Pushes a single marble towards its target and analyzes the direction
+        in which the push is being performed.
+        It includes pushing friendly marbles both with no sumito and sumito.
+        It also checks if the move is possible. More than 3 friendly marbles cannot
+        be moved at the same time.  Also, a sumito can be invalid: if the number 
+        of enemy marbles is higher or equal to the number of friendly marbles
+        or if an enemy marble is followed by a friendly marble.
+        Parameters
+        ----------
+        origin: tuple of ints (required)
+            (row, column) location in self.data of the selected marble 
+        target: tuple of ints (required)
+            (row, column) location in self.data of the targetted marble 
+        Returns
+        -------
+        bool:
+            True if the move is valid, False otherwise
         """
         self.clear_buffers()
         self.new_marbles[origin] = 1 # If the move is valid, the picked marble will become free
@@ -204,16 +230,25 @@ class Abalone(pg.sprite.Sprite):
             origin = self.normalize_coordinates(origin_center)
             target = self.normalize_coordinates(next_spot)
     
-    def select_range(self, pick):
+    def select_range(self, pick, value):
         """
-        TODO
+        Select a range of marbles by holding left-shift and left-mouseclick.
+        If the selected range is valid, the marbles will become purple (display purposes only).
+        Returns the centers of the marbles in the range (if valid).
+        Parameter
+        ---------
+        pick: tuple of ints (required)
+            Current marble being selected 
+        Returns
+        -------
+        centers: list
+            Centers of the marbles defining the range
         """
         # No need to check as a possibility (valid or not) has been found already
         if const.MARBLE_GREEN in self.new_colors.values():
             return None
         elif const.MARBLE_RED in self.new_colors.values():
             return None 
-        value = self.get_value(pick)
         if value == self.current_color:
             # Selected marble will become a free spot (if possible)
             self.new_marbles[pick] = 1 
@@ -225,7 +260,21 @@ class Abalone(pg.sprite.Sprite):
 
     def check_range(self, value, centers) -> bool:
         """
-        TODO
+        Check if a range of marbles is valid.
+        The range must contains only the current color being played.
+        If the range contains 2 marbles, the marbles must be neighbours.
+        If the range contains 3 marbles, they must be aligned along an unique axis.
+        The range cannot contain more than 4 marbles (Abalone rules).
+        Parameters
+        ----------
+        value: int (required)
+            Color of the selected marble. Must be equal to the current color
+        centers: list (required)
+            Centers of the marbles defining the range to be checked
+        Returns
+        -------
+        bool:
+            True if the range is valid, False otherwise
         """
         if value != self.current_color:
             return False
@@ -243,19 +292,28 @@ class Abalone(pg.sprite.Sprite):
             if int(d_p0_p2) != int(d_p0_p1*2):
                 return False
         # A range of more than 3 marbles is invalid 
-        elif len(centers) > 3:
+        if len(centers) > 3:
             return False 
         return True 
 
-    def new_range(self, pick, value, centers):
+    def new_range(self, target, centers) -> bool:
         """
-        TODO
+        Computes the new range of marbles with respect to the selected one
+        and the targetted marble. The new ranges must be valid, meaning it
+        must contain only free spots
+        Parameters
+        ----------
+
+        Returns
+        -------
+        bool:
+            True if the new range is valid, False otherwise
         """
-        if value != self.current_color and len(centers) in (2, 3):
-            target = self.get_center(pick)
+        if self.get_value(target) != self.current_color and len(centers) in (2, 3):
+            target_center = self.get_center(target)
             origin = centers[-1][0], centers[-1][1]
-            nx = (target[0] - origin[0]) / const.MARBLE_SIZE
-            ny = (target[1] - origin[1]) / const.MARBLE_SIZE
+            nx = (target_center[0] - origin[0]) / const.MARBLE_SIZE
+            ny = (target_center[1] - origin[1]) / const.MARBLE_SIZE
             new_centers = [self.next_spot(c, nx, ny) for c in centers]
             new_centers = [self.normalize_coordinates(c) for c in new_centers]
             # If new_centers cannot be all normalized, an out of bounds has been reached
@@ -265,7 +323,9 @@ class Abalone(pg.sprite.Sprite):
                 # If one on the new spots isn't free
                 nonfree_spots = any(self.get_value(c) != 1 for c in new_centers)
             # Or if the target isn't in the neigbourhood
-            not_neighbour = self.distance(centers[-1], target) > const.MAX_DISTANCE_MARBLE
+            not_neighbour = (
+                self.distance(centers[-1], target_center) 
+                > const.MAX_DISTANCE_MARBLE)
             if nonfree_spots or not_neighbour:
                 if const.MARBLE_RED not in self.new_colors.values():
                     self.new_colors[new_centers[-1]] = const.MARBLE_RED
@@ -318,8 +378,7 @@ class Abalone(pg.sprite.Sprite):
         self.clear_buffers()
 
     def clear_buffers(self):
-        """Clear ????"""
-        
+        """Clear the data structures that can potentially change each turn."""
         self.new_marbles.clear()
         self.new_colors.clear()
         self.buffer_dead_marble.clear()
@@ -328,15 +387,14 @@ class Abalone(pg.sprite.Sprite):
     @staticmethod
     def next_spot(origin, n_x, n_y):
         """Compute the next spot of a marble given a vector.
-        The vector defines a direction (N, S, E, O, SE, SW, NE, NW)
-
+        The vector defines a direction (N, S, E, W, NE, NW, SE, SW)
         Parameters
         ----------
         origin: tuple of integers (required)
             Initial marble
-        n_x: double
+        n_x: double (required)
             x-component of the vector
-        n_y: double
+        n_y: double (required)
             y_compnent of the vector
         Returns
         -------
@@ -349,7 +407,7 @@ class Abalone(pg.sprite.Sprite):
         
     @staticmethod
     def distance(p1, p2):
-        """Compute the distance between two points (p1, p2)."""
+        """Returns the distance between two points p1, p2."""
         return math.sqrt((p2[0] - p1[0])**2 + (p2[1] - p1[1])**2)
 
 def main():

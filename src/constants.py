@@ -8,14 +8,15 @@ In descending order:
 """
 
 import os
-import pygame
+import pygame as pg
+import numpy as np
 from math import sqrt
 from pygame.locals import *
 
-pygame.init()
-useless_screen = pygame.display.set_mode()
+pg.init()
+useless_screen = pg.display.set_mode()
 
-FONT = pygame.font.SysFont("Calibri", 42)
+FONT = pg.font.SysFont("Calibri", 42)
 
 # Directories
 FILE_DIR = os.path.dirname(__file__)
@@ -39,37 +40,37 @@ ARROW_COLOR = (255, 0, 247)
 
 # Images
 # https://www.iconshock.com/flat-icons/3d-graphics-icons/sphere-icon/
-MARBLE_RED = pygame.image.load(
+MARBLE_RED = pg.image.load(
     os.path.join(IMAGES_DIR, "marble_red.png")
     ).convert_alpha()
-MARBLE_GREEN = pygame.image.load(
+MARBLE_GREEN = pg.image.load(
     os.path.join(IMAGES_DIR, "marble_green.png")
     ).convert_alpha()
-MARBLE_PURPLE = pygame.image.load(
+MARBLE_PURPLE = pg.image.load(
     os.path.join(IMAGES_DIR, "marble_purple.png")
     ).convert_alpha()
-MARBLE_BLUE = pygame.image.load(
+MARBLE_BLUE = pg.image.load(
     os.path.join(IMAGES_DIR, "marble_blue.png")
     ).convert_alpha()
-DEAD_BLUE = pygame.image.load(
+DEAD_BLUE = pg.image.load(
     os.path.join(IMAGES_DIR, "marble_blue.png")
     ).convert_alpha()
 DEAD_BLUE.set_alpha(128)
-MARBLE_YELLOW = pygame.image.load(
+MARBLE_YELLOW = pg.image.load(
     os.path.join(IMAGES_DIR, "marble_yellow.png")
     ).convert_alpha()
-DEAD_YELLOW = pygame.image.load(
+DEAD_YELLOW = pg.image.load(
     os.path.join(IMAGES_DIR, "marble_yellow.png")
     ).convert_alpha()
 DEAD_YELLOW.set_alpha(128)
-MARBLE_FREE = pygame.image.load(
+MARBLE_FREE = pg.image.load(
     os.path.join(IMAGES_DIR, "marble_empty.png")
     ).convert_alpha()
 # https://icons8.com/icon/54885/skull
-SKULL = pygame.image.load(
+SKULL = pg.image.load(
     os.path.join(IMAGES_DIR, "skull.png")
 ).convert_alpha()
-SKULL = pygame.transform.rotozoom(SKULL, 0, 0.7)  # Adjusting size
+SKULL = pg.transform.rotozoom(SKULL, 0, 0.7)  # Adjusting size
 
 MARBLE_SIZE = MARBLE_RED.get_rect().size[0] # All marbles have the same size
 MAX_DISTANCE_MARBLE = MARBLE_SIZE*sqrt(1.25) # Max distance between two neighbouring marbles (diagonal)
@@ -300,4 +301,3 @@ THE_WALL = (
     [1, 1, 1, 1, 1, 1],
     [1, 1, 3, 1, 1],
 )
-
