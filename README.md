@@ -1,6 +1,5 @@
-# Abalone_Pygame
+# Abalon3
 Abalone game (Michel Lalet and Laurent Lévi, 1989) using a Pygame GUI (player versus player).
-\
 
 Requirements:
 
