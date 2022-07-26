@@ -212,6 +212,7 @@ class Board(pg.sprite.Sprite):
             # Meeting an enemy or a free spot
             elif other_marble:
                 if sumito:
+                    # Not a big fan of ternary conditional operator tbf
                     if self.get_value(origin) == friend:
                         self.new_marbles[target] = friend
                     else:
@@ -220,6 +221,10 @@ class Board(pg.sprite.Sprite):
                     self.new_marbles[target] = friend
                 # Loop ends if a free spot is reached
                 if target_value == 1:
+                    if colors[-1] == 2:
+                        self.new_colors[target] = const.MARBLE_BLUE
+                    else: 
+                        self.new_colors[target] = const.MARBLE_YELLOW
                     return True
             # Getting the next spot
             n_x = (target_center[0] - origin_center[0]) / const.MARBLE_SIZE

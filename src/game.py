@@ -26,7 +26,6 @@ def main():
     moving = False
     game_over = False
     valid_move = False
-    path = False
 
     while running:
         # Events handling
@@ -64,10 +63,9 @@ def main():
                         continue
                     # Move is valid, getting marble's data
                     moving = True
-                    pick_value = board.get_value(pick)
                     pick_center = board.get_center(pick)
-                    pick_marble = const.MARBLE_IMGS[pick_value].get_rect()
-                    pick_marble.center = pick_center
+                    moving_marble = const.MARBLE_IMGS[board.get_value(pick)].get_rect()
+                    moving_marble.center = pick_center
                 # Releasing selection
                 elif event.type == pg.MOUSEBUTTONUP:
                     moving = False
@@ -76,7 +74,7 @@ def main():
                 # Moving single marble
                 elif event.type == pg.MOUSEMOTION and moving:
                     valid_move = False
-                    pick_marble.move_ip(event.rel)
+                    moving_marble.move_ip(event.rel)
                     target = board.normalize_coordinates(mouse)
                     if not target:
                         continue # User's target is invalid (out of bounds)
@@ -96,14 +94,16 @@ def main():
                     if centers:
                         valid_move = board.new_range(pick, centers)
         # Overall display
-        dsp.overall_display(screen, board, game_over, valid_move, path)
+        dsp.overall_display(screen, board, game_over, valid_move)
         # Displaying the moving selected marble
         if moving: 
             origin_center = board.get_center(pick)
             rect_free = const.MARBLE_FREE.get_rect()
             rect_free.center = origin_center
             screen.blit(const.MARBLE_FREE, rect_free)
-            screen.blit(const.MARBLE_IMGS[pick_value], pick_marble)
+            screen.blit(const.MARBLE_IMGS[board.get_value(pick)], moving_marble)
+        if record:
+            record_game(screen)
         # Updating screen
         pg.display.update()
     pg.quit()
@@ -118,11 +118,10 @@ def record_game(screen) -> None:
     """
 
     global n_snap
-    n_snap += 1
     extension = "png"
     file_name = f"snapshot_{n_snap}.{extension}"
     pg.image.save(screen, os.path.join(SNAP_FOLDER, file_name))
-
+    n_snap += 1
 
 if __name__ == "__main__":
     main()

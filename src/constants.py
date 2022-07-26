@@ -1,11 +1,4 @@
-"""Sets the constant variables.
-
-In descending order:
-- Window size and font property
-- Colours used
-- Images (please note that all images used are free to use, links provided below)
-- Initial configurations
-"""
+"""Setup game settings and constants"""
 
 import os
 import pygame as pg
@@ -38,7 +31,7 @@ GREEN2 = (39, 151, 0)
 GREEN3 = (102, 203, 112)
 ARROW_COLOR = (255, 0, 247)
 
-# Images
+# Images (free to use)
 # https://www.iconshock.com/flat-icons/3d-graphics-icons/sphere-icon/
 MARBLE_RED = pg.image.load(
     os.path.join(IMAGES_DIR, "marble_red.png")
@@ -52,17 +45,9 @@ MARBLE_PURPLE = pg.image.load(
 MARBLE_BLUE = pg.image.load(
     os.path.join(IMAGES_DIR, "marble_blue.png")
     ).convert_alpha()
-DEAD_BLUE = pg.image.load(
-    os.path.join(IMAGES_DIR, "marble_blue.png")
-    ).convert_alpha()
-DEAD_BLUE.set_alpha(128)
 MARBLE_YELLOW = pg.image.load(
     os.path.join(IMAGES_DIR, "marble_yellow.png")
     ).convert_alpha()
-DEAD_YELLOW = pg.image.load(
-    os.path.join(IMAGES_DIR, "marble_yellow.png")
-    ).convert_alpha()
-DEAD_YELLOW.set_alpha(128)
 MARBLE_FREE = pg.image.load(
     os.path.join(IMAGES_DIR, "marble_empty.png")
     ).convert_alpha()
@@ -71,15 +56,16 @@ SKULL = pg.image.load(
     os.path.join(IMAGES_DIR, "skull.png")
 ).convert_alpha()
 SKULL = pg.transform.rotozoom(SKULL, 0, 0.7)  # Adjusting size
+# Dead marbles
+DEAD_BLUE = MARBLE_BLUE.copy()
+DEAD_BLUE.blit(SKULL, (8, 8))
+DEAD_YELLOW = MARBLE_YELLOW.copy()
+DEAD_YELLOW.blit(SKULL, (8, 8))
 
 MARBLE_SIZE = MARBLE_RED.get_rect().size[0] # All marbles have the same size
 MAX_DISTANCE_MARBLE = MARBLE_SIZE*sqrt(1.25) # Max distance between two neighbouring marbles (diagonal)
 
-# Merging with the skull
-DEAD_BLUE = DEAD_BLUE.copy()
-DEAD_BLUE.blit(SKULL, (8, 8))
-DEAD_YELLOW = DEAD_YELLOW.copy()
-DEAD_YELLOW.blit(SKULL, (8, 8))
+
 
 # Window size
 WIDTH = 900
@@ -94,8 +80,6 @@ MARBLE_IMGS = {
     1: MARBLE_FREE, 
     2: MARBLE_BLUE, 
     3: MARBLE_YELLOW,
-    4: MARBLE_GREEN,
-    5: MARBLE_RED,
 }
 
 # Texts
