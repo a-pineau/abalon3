@@ -51,11 +51,9 @@ def main():
                 elif event.key == pg.K_r:
                     board.reset()
                     game_over = False
-                    path = False
             # Selecting a single marble
             if not game_over:
                 if event.type == pg.MOUSEBUTTONDOWN and not p_keys[pg.K_LSHIFT]:
-                    path = True
                     pick = board.normalize_coordinates(pg.mouse.get_pos())
                     # Checking pick validity 
                     # Cant be out of bounds or must be current color
@@ -69,7 +67,6 @@ def main():
                 # Releasing selection
                 elif event.type == pg.MOUSEBUTTONUP:
                     moving = False
-                    path = False
                     board.clear_buffers()
                 # Moving single marble
                 elif event.type == pg.MOUSEMOTION and moving:
@@ -109,7 +106,7 @@ def main():
     pg.quit()
 
 def record_game(screen) -> None:
-    """Save a snapshot of the current grid to the SNAP_FOLDER.
+    """Save a snapshot of the current screen to the SNAP_FOLDER.
 
     Parameter
     ---------

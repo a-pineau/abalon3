@@ -28,37 +28,39 @@ class Board(pg.sprite.Sprite):
         See constants.py for more configurations.
     Attributes
     ----------
-    data: list (of lists)
+    data: list (2D)
         List of list. Defines the state of every marble on the Abalone board.
         A state can have 3 values: 1: empty spot, 2: blue marble, 3: yellow marble
         Each list defines a row of the board.
         By convention, the first row represents the board's top row.
-    blue_deadzone: list (of lists)
+    blue_deadzone: list (2D)
         Defines the zone where the blue marbles are resting in piece.
         This is purely for display purposes. It does not affect the state of the board.
-    yellow_deadzone: list (of lists)
+    yellow_deadzone: list (2D)
         Same than above, but for yellow marbles
     current_color: int
         Current color being played. Randomly chosen when starting a new game.
         Can take two values: 2 (blue marbles) or 3 (yellow marbles)
     scores: dict
-        key: string, value: int
+        keys: string, values: int
         Defines the score of the blue and yellow players.
         Note: this isn't really necessary as the score can be obtained by analyzing the deadzones.
         But it requires to convert the values of the deadzones into lists and count the marbles.
         So the scores dict is simply easier to work with.
     new_colors: dict
+        keys: tuple, values: pygame.Surface
         Defines the marbles that will change color when displaying the board.
         Used for display purposes only. It does not affect the state of the board.
     new_marbles: dict
-        key: tuple of ints (new marbles positions), value: int (new marbles values)
+        keys: tuple, values: int
         Defines the marbles that will be changed after a valid move
     """
     
     ######### Constructor #########
     def __init__(self, configuration=const.STANDARD):
         """
-        Initializes the starting configuration and all the atributes.
+        Initializes the starting configuration and all the attributes.
+
         Parameter
         ---------
         configuration: list (optional, default=STANDARD)
@@ -84,9 +86,10 @@ class Board(pg.sprite.Sprite):
         Returns the center (tuple of ints) of a marble 
         given its corresponding location in self.data
         The center is expressed in the Pygame frame (x-pixels x y-pixels)
+
         Parameter
         ---------
-        index: tuple of ints
+        loc: tuple
             (row, column) location of a given marble in self.data
         """
         r, c = loc
@@ -101,9 +104,10 @@ class Board(pg.sprite.Sprite):
         """
         Returns the value (int) of a specific location.
         Used for better readability only to avoid writing self.data[r][c] each time.
+
         Parameter
         ---------
-        index: tuple of ints
+        loc: tuple
             (row, column) location in self.data of the corresponding marble 
         """
         r, c = loc
@@ -111,7 +115,7 @@ class Board(pg.sprite.Sprite):
 
     def check_win(self):
         """
-        Check if a player has won the game.
+        Checks if a player has won the game.
         Returns False if not.
         Returns the color of the corresponding player otherwise.
         """
@@ -126,13 +130,14 @@ class Board(pg.sprite.Sprite):
         Normalizes the position given into its location (row, column) on self.data
         For instance, clicking on the top-left marble will return 0, 0 as it is 
         the first marble in self.data
+
         Parameter
         ---------
-        position: tuple of ints (required)
+        position: tuple (required)
             Current position (e.g. mouse cursor)
         Returns
         -------
-        tuple of ints 
+        tuple
             Corresponding location in self.data
         """
         x, y = position
@@ -155,11 +160,12 @@ class Board(pg.sprite.Sprite):
         be moved at the same time.  Also, a sumito can be invalid: if the number 
         of enemy marbles is higher or equal to the number of friendly marbles
         or if an enemy marble is followed by a friendly marble.
+
         Parameters
         ----------
-        origin: tuple of ints (required)
+        origin: tuple (required)
             (row, column) location in self.data of the selected marble 
-        target: tuple of ints (required)
+        target: tuple (required)
             (row, column) location in self.data of the targetted marble 
         Returns
         -------
@@ -240,9 +246,10 @@ class Board(pg.sprite.Sprite):
         Select a range of marbles by holding left-shift and left-mouseclick.
         If the selected range is valid, the marbles will become purple (display purposes only).
         Returns the centers of the marbles in the range (if valid).
+
         Parameter
         ---------
-        pick: tuple of ints (required)
+        pick: tuple (required)
             Current marble being selected 
         Returns
         -------
@@ -270,6 +277,7 @@ class Board(pg.sprite.Sprite):
         If the range contains 2 marbles, the marbles must be neighbours.
         If the range contains 3 marbles, they must be aligned along an unique axis.
         The range cannot contain more than 4 marbles (Abalone rules).
+
         Parameters
         ----------
         value: int (required)
@@ -305,10 +313,14 @@ class Board(pg.sprite.Sprite):
         """
         Computes the new range of marbles with respect to the selected one
         and the targetted marble. The new ranges must be valid, meaning it
-        must contain only free spots
+        must contain only free spots.
+
         Parameters
         ----------
-
+        target: tuple (required)
+            (row, column) location in self.data of the targetted marble 
+        centers: list (required)
+            Centers of the marbles defining the range
         Returns
         -------
         bool:
@@ -369,7 +381,8 @@ class Board(pg.sprite.Sprite):
         
     def reset(self, configuration=const.STANDARD):
         """
-        Reset and set a new game.
+        Resets and sets a new game.
+
         Parameter
         ---------
         configuration: list (optional, default=STANDARD)
@@ -383,7 +396,7 @@ class Board(pg.sprite.Sprite):
         self.clear_buffers()
 
     def clear_buffers(self):
-        """Clear the data structures that can potentially change each turn."""
+        """Clears the data structures that can potentially change each turn."""
         self.new_marbles.clear()
         self.new_colors.clear()
         self.buffer_dead_marble.clear()
@@ -391,16 +404,17 @@ class Board(pg.sprite.Sprite):
     ######### Static Methods #########
     @staticmethod
     def next_spot(origin, n_x, n_y):
-        """Compute the next spot of a marble given a vector.
+        """Computes the next spot of a marble given a vector.
         The vector defines a direction (N, S, E, W, NE, NW, SE, SW)
+
         Parameters
         ----------
-        origin: tuple of integers (required)
+        origin: tuple (required)
             Initial marble
         n_x: double (required)
             x-component of the vector
         n_y: double (required)
-            y_compnent of the vector
+            y-compnent of the vector
         Returns
         -------
         spot_x, spot_y: tuple of integers
