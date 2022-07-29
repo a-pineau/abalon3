@@ -21,4 +21,5 @@ Could be implemented:
 - Menu to change the initial configuration (available in constants.py)
 - Computer as opponent
 
-Gameplay: TODO
+Gameplay (this is an old gif, an up-to-date one will be uploaded soon):
+![Abalon3](screenshots/gameplay.gif)
