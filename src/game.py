@@ -37,8 +37,8 @@ def main():
             if event.type == pg.QUIT:
                 running = False
             elif event.type == pg.KEYDOWN:
-                # Quiting game with or q
-                if event.key == event.key == pg.K_q:
+                # Quiting game with q
+                if event.key == pg.K_q:
                     running = False
                 # Confirming move and possible update
                 elif event.key == pg.K_SPACE:

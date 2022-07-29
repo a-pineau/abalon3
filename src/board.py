@@ -83,7 +83,7 @@ class Board(pg.sprite.Sprite):
 
     def get_center(self, loc) -> tuple:
         """
-        Returns the center (tuple of ints) of a marble 
+        Returns the center of a marble 
         given its corresponding location in self.data
         The center is expressed in the Pygame frame (x-pixels x y-pixels)
 
@@ -91,6 +91,10 @@ class Board(pg.sprite.Sprite):
         ---------
         loc: tuple
             (row, column) location of a given marble in self.data
+        Returns
+        -------
+        tuple:
+            Marble center
         """
         r, c = loc
         len_r = len(self.data[r])
@@ -102,13 +106,16 @@ class Board(pg.sprite.Sprite):
 
     def get_value(self, loc) -> int:
         """
-        Returns the value (int) of a specific location.
+        Returns the value of a specific location.
         Used for better readability only to avoid writing self.data[r][c] each time.
 
         Parameter
         ---------
         loc: tuple
             (row, column) location in self.data of the corresponding marble 
+        Returns
+        -------
+            Value at loc
         """
         r, c = loc
         return self.data[r][c]
@@ -137,8 +144,9 @@ class Board(pg.sprite.Sprite):
             Current position (e.g. mouse cursor)
         Returns
         -------
-        tuple
-            Corresponding location in self.data
+        tuple if the position can be normalized
+            Corresponding location in self.data 
+        False if the position cannot be normalized (out of bounds)
         """
         x, y = position
         # Getting row index
